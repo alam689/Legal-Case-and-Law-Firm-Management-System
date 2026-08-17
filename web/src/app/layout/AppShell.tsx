@@ -171,7 +171,13 @@ export function AppShell() {
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-4 border-b border-border bg-surface/90 px-4 backdrop-blur md:px-6">
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-fg">{t('dashboard.title')}</p>
+              {/*
+                আগে এখানে `dashboard.title` ছিল — অর্থাৎ নথি বা ক্যালেন্ডার
+                পাতায় বসেও শিরোনাম "ড্যাশবোর্ড" দেখাত। App shell সব route-এ
+                থাকে, তাই এখানকার লেখা core-এই থাকতে হবে; আর সব পাতায় সত্যি
+                থাকে এমন লেখা হলো app-এর নামটিই।
+              */}
+              <p className="truncate text-sm font-semibold text-fg">{t('common.appName')}</p>
               <p className="truncate text-xs text-fg-subtle">
                 <DateText value={new Date()} style="weekday" />
               </p>

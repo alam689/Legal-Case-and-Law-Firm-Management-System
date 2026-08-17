@@ -1,4 +1,4 @@
-import { resources } from '@caseflow/i18n';
+import { coreResources } from '@caseflow/i18n';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
@@ -6,13 +6,28 @@ import { DEFAULT_LOCALE, readStoredLocale } from './locale';
 
 /**
  * বাংলা default, English toggle (NFR N9)।
- * Namespace আপাতত একটিই bundle-এ; feature বাড়লে lazy namespace-এ ভাগ হবে
- * (docs/05-frontend-plan.md §6.5)।
+ *
+ * এখানে শুধু **core** string — app shell, auth, ত্রুটি, validation।
+ * Feature-এর লেখা route-এর সাথে lazy আসে ([`chunks.ts`](./chunks.ts)),
+ * তাই নতুন module যোগ হলেও initial bundle বাড়ে না
+ * (docs/05-frontend-plan.md §12; STATUS §7 R3)।
+ *
+ * ⚠ `@caseflow/i18n/full` এখানে import করা যাবে না — করলেই সব chunk
+ * initial bundle-এ ফিরে আসবে।
  */
+/**
+ * i18next `addResourceBundle(…, deep)` লক্ষ্য object-টিকে **জায়গাতেই**
+ * বদলায়। তাই `coreResources` সরাসরি দিলে প্রতিটি lazy chunk বসানোর সময়
+ * package-এর exported constant-টিই ফুলে উঠত — অর্থাৎ "core-এ কী আছে"
+ * প্রশ্নের উত্তর runtime-এ মিথ্যা হয়ে যেত। একটি copy দিয়ে i18next-কে
+ * তার নিজের store-এর মালিকানা দেওয়া হয়।
+ */
+const ownedCopy = <T,>(tree: T): T => structuredClone(tree);
+
 void i18n.use(initReactI18next).init({
   resources: {
-    bn: { translation: resources.bn },
-    en: { translation: resources.en },
+    bn: { translation: ownedCopy(coreResources.bn) },
+    en: { translation: ownedCopy(coreResources.en) },
   },
   lng: readStoredLocale(),
   fallbackLng: DEFAULT_LOCALE,

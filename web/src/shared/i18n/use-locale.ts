@@ -2,6 +2,7 @@ import type { Language } from '@caseflow/domain';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { ensureLocaleChunksFor } from './chunks';
 import { type Locale, localeToLanguage, storeLocale } from './locale';
 
 /**
@@ -17,11 +18,19 @@ export function useLocale(): {
   const { i18n } = useTranslation();
   const locale: Locale = i18n.language === 'en' ? 'en' : 'bn';
 
+  /**
+   * ভাষা বদলানোর **আগে** এই session-এ ব্যবহৃত chunk গুলো নতুন ভাষায় আনা হয়।
+   *
+   * উল্টো ক্রমে করলে এক মুহূর্তের জন্য অর্ধেক পর্দা ইংরেজি (core) আর
+   * অর্ধেক কাঁচা key দেখাত — যেটি ভাঙা app-এর মতো লাগে।
+   */
   const setLocale = useCallback(
     (next: Locale) => {
-      void i18n.changeLanguage(next);
-      storeLocale(next);
-      if (typeof document !== 'undefined') document.documentElement.lang = next;
+      void ensureLocaleChunksFor(next).then(() => {
+        void i18n.changeLanguage(next);
+        storeLocale(next);
+        if (typeof document !== 'undefined') document.documentElement.lang = next;
+      });
     },
     [i18n],
   );

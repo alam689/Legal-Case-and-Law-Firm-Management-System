@@ -13,6 +13,20 @@ export interface CaseListFilters {
   page?: string;
 }
 
+export interface DocumentListFilters {
+  search?: string;
+  category?: string;
+  caseId?: string;
+  propertyId?: string;
+}
+
+export interface InvoiceListFilters {
+  search?: string;
+  status?: string;
+  caseId?: string;
+  clientId?: string;
+}
+
 export const qk = {
   auth: {
     me: () => ['auth', 'me'] as const,
@@ -24,6 +38,12 @@ export const qk = {
   cases: {
     all: () => ['cases'] as const,
     list: (filters: CaseListFilters = {}) => ['cases', 'list', filters] as const,
+    /**
+     * নথি/সম্পত্তির নির্বাচকের জন্য সমতল তালিকা — `list()` থেকে আলাদা key,
+     * কারণ সেটি `useInfiniteQuery` (page-এর array) আর এটি সাধারণ query।
+     * একই key দিলে cache-এ দুই আকারের data মিশে যেত।
+     */
+    options: () => ['cases', 'options'] as const,
     detail: (id: string) => ['cases', 'detail', id] as const,
     timeline: (id: string) => ['cases', 'detail', id, 'timeline'] as const,
     hearings: (id: string) => ['cases', 'detail', id, 'hearings'] as const,
@@ -40,6 +60,29 @@ export const qk = {
     all: () => ['clients'] as const,
     list: (search?: string) => ['clients', 'list', search ?? ''] as const,
     detail: (id: string) => ['clients', 'detail', id] as const,
+  },
+  documents: {
+    all: () => ['documents'] as const,
+    list: (filters: DocumentListFilters = {}) => ['documents', 'list', filters] as const,
+    categories: (filters: DocumentListFilters = {}) =>
+      ['documents', 'categories', filters] as const,
+    detail: (id: string) => ['documents', 'detail', id] as const,
+  },
+  properties: {
+    all: () => ['properties'] as const,
+    list: (search?: string) => ['properties', 'list', search ?? ''] as const,
+    detail: (id: string) => ['properties', 'detail', id] as const,
+    forCase: (caseId: string) => ['properties', 'for-case', caseId] as const,
+  },
+  billing: {
+    all: () => ['billing'] as const,
+    invoices: (filters: InvoiceListFilters = {}) => ['billing', 'invoices', filters] as const,
+    invoice: (id: string) => ['billing', 'invoice', id] as const,
+    financial: () => ['billing', 'financial'] as const,
+    feeAgreement: (caseId: string) => ['billing', 'fee-agreement', caseId] as const,
+  },
+  firm: {
+    settings: () => ['firm', 'settings'] as const,
   },
   notifications: {
     list: () => ['notifications', 'list'] as const,

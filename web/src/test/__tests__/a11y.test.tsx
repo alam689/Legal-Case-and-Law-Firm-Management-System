@@ -6,9 +6,14 @@ import { useSessionStore } from '@/shared/auth/session.store';
 import CaseDetailPage from '@/features/cases/pages/CaseDetailPage';
 import CaseListPage from '@/features/cases/pages/CaseListPage';
 import ClientListPage from '@/features/clients/pages/ClientListPage';
+import InvoiceListPage from '@/features/billing/pages/InvoiceListPage';
 import DashboardPage from '@/features/dashboard/pages/DashboardPage';
+import DocumentListPage from '@/features/documents/pages/DocumentListPage';
 import CalendarPage from '@/features/hearings/pages/CalendarPage';
 import DiaryPage from '@/features/hearings/pages/DiaryPage';
+import PropertyDetailPage from '@/features/properties/pages/PropertyDetailPage';
+import PropertyListPage from '@/features/properties/pages/PropertyListPage';
+import FirmSettingsPage from '@/features/settings/pages/FirmSettingsPage';
 import LoginPage from '@/features/auth/pages/LoginPage';
 import { findA11yViolations } from '@/test/a11y';
 import { lawyerFixture } from '@/test/fixtures';
@@ -120,6 +125,59 @@ describe('a11y — WCAG 2.1 AA (axe)', () => {
     await waitFor(() => {
       expect(screen.getAllByRole('listitem').length).toBeGreaterThan(0);
     });
+
+    expect(await findA11yViolations(container)).toEqual([]);
+  });
+
+  it('নথির তালিকা (শ্রেণির ফোল্ডারসহ)', async () => {
+    signIn();
+    const { container } = renderWithProviders(<DocumentListPage />, { route: '/documents' });
+    await waitFor(() => {
+      expect(screen.getAllByRole('row').length).toBeGreaterThan(1);
+    });
+
+    expect(await findA11yViolations(container)).toEqual([]);
+  });
+
+  it('সম্পত্তির তালিকা', async () => {
+    signIn();
+    const { container } = renderWithProviders(<PropertyListPage />, { route: '/properties' });
+    await waitFor(() => {
+      expect(screen.getAllByRole('row').length).toBeGreaterThan(1);
+    });
+
+    expect(await findA11yViolations(container)).toEqual([]);
+  });
+
+  it('সম্পত্তির বিস্তারিত (tab ও রেকর্ড তালিকা)', async () => {
+    signIn();
+    const { container } = renderWithProviders(
+      <Routes>
+        <Route path="/properties/:propertyId" element={<PropertyDetailPage />} />
+      </Routes>,
+      { route: '/properties/property-1' },
+    );
+    await waitFor(() => {
+      expect(screen.getAllByRole('tab').length).toBeGreaterThan(1);
+    });
+
+    expect(await findA11yViolations(container)).toEqual([]);
+  });
+
+  it('চালানের তালিকা (আর্থিক চিত্রসহ)', async () => {
+    signIn();
+    const { container } = renderWithProviders(<InvoiceListPage />, { route: '/billing/invoices' });
+    await waitFor(() => {
+      expect(screen.getAllByRole('row').length).toBeGreaterThan(1);
+    });
+
+    expect(await findA11yViolations(container)).toEqual([]);
+  });
+
+  it('চেম্বারের সেটিংস', async () => {
+    signIn();
+    const { container } = renderWithProviders(<FirmSettingsPage />, { route: '/settings' });
+    await screen.findByLabelText('চেম্বারের নাম');
 
     expect(await findA11yViolations(container)).toEqual([]);
   });

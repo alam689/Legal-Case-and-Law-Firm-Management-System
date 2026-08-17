@@ -12,4 +12,5 @@ export * from './capabilities.js';
 export * from './workflow.js';
 export * from './calendar/index.js';
 export * from './schemas.js';
+export * from './money.js';
 export * from './inheritance/index.js';

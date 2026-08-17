@@ -133,3 +133,6 @@ export * from './store';
 export * from './hearings';
 export * from './notifications';
 export * from './metrics';
+export * from './documents';
+export * from './properties';
+export * from './billing';

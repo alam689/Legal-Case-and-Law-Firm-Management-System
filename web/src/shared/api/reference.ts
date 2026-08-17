@@ -1,4 +1,10 @@
-import type { CourtSummary, CursorPage, WorkflowDefinitionSummary } from '@caseflow/api-types';
+import type {
+  CaseListItem,
+  CourtSummary,
+  CursorPage,
+  FirmSettings,
+  WorkflowDefinitionSummary,
+} from '@caseflow/api-types';
 import { useQuery } from '@tanstack/react-query';
 
 import { http } from './http';
@@ -27,6 +33,35 @@ export function useWorkflows() {
   return useQuery({
     queryKey: qk.reference.workflows(),
     queryFn: () => http.get<CursorPage<WorkflowDefinitionSummary>>('/workflows'),
+    staleTime: REFERENCE_STALE_TIME,
+  });
+}
+
+/**
+ * "কোন মামলার সাথে?" — নথি ও সম্পত্তি দুটো feature-ই এটি চায়।
+ *
+ * `features/cases` থেকে hook import করা যেত না (§4), তাই এখানে। Reference
+ * data নয় বলে staleTime ছোট — নতুন মামলা তৈরি করার পরে সেটি তালিকায়
+ * থাকা চাই; `qk.cases.all()` invalidate হলে এটিও নতুন করে আসে।
+ */
+export function useCaseOptions() {
+  return useQuery({
+    queryKey: qk.cases.options(),
+    queryFn: () => http.get<CursorPage<CaseListItem>>('/cases', { query: { limit: 200 } }),
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * চেম্বারের সেটিংস — letterhead-এর উৎস।
+ *
+ * `features/settings` এটি সম্পাদনা করে, `features/billing` চালান ও রসিদের
+ * মাথায় ছাপে। দুই feature-ই চায় বলে shared/-এ (§4)।
+ */
+export function useFirmSettings() {
+  return useQuery({
+    queryKey: qk.firm.settings(),
+    queryFn: () => http.get<FirmSettings>('/firm/settings'),
     staleTime: REFERENCE_STALE_TIME,
   });
 }

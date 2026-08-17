@@ -32,6 +32,8 @@ export default {
         success: { DEFAULT: 'hsl(var(--tone-success))', bg: 'hsl(var(--tone-success-bg))' },
         warning: { DEFAULT: 'hsl(var(--tone-warning))', bg: 'hsl(var(--tone-warning-bg))' },
         danger: { DEFAULT: 'hsl(var(--tone-danger))', bg: 'hsl(var(--tone-danger-bg))' },
+        // সাপ্তাহিক ছুটি — semantic Tone নয়, ক্যালেন্ডারের ছুটির দিনের নিজস্ব রঙ
+        weekend: { DEFAULT: 'hsl(var(--weekend))', bg: 'hsl(var(--weekend-bg))' },
       },
       fontFamily: {
         // Bangla-first — Noto Sans Bengali আগে, Latin fallback Inter

@@ -8,6 +8,41 @@ import { todayIso as todayInDhaka } from '@/shared/i18n/formatters';
 
 import {
   type CaseListFilters,
+  buildCaseLedger,
+  buildFinancialSummary,
+  cancelInvoice,
+  createInvoice,
+  getFeeAgreement,
+  getFirmSettings,
+  getInvoice,
+  issueInvoice,
+  listInvoices,
+  listPayments,
+  recordPayment,
+  saveFeeAgreement,
+  updateFirmSettings,
+  updateInvoice,
+  addDeed,
+  addDocumentVersion,
+  addLandRecord,
+  addLandTax,
+  addMutation,
+  createDocument,
+  createProperty,
+  deleteDocument,
+  documentCategoryCounts,
+  getDocument,
+  getProperty,
+  linkPropertyCase,
+  listDocuments,
+  listProperties,
+  removeDeed,
+  removeLandRecord,
+  removeLandTax,
+  removeMutation,
+  setDocumentVisibility,
+  unlinkPropertyCase,
+  updateProperty,
   allHearings,
   buildCalendar,
   buildCoreLoopMetrics,
@@ -281,5 +316,277 @@ export const handlers = [
     const body = (await request.json()) as Parameters<typeof updateCase>[1];
     const found = updateCase(String(params.id), body);
     return found ? HttpResponse.json(found) : errorEnvelope('not_found', 'Case not found', 404);
+  }),
+
+  /* ── Documents (Sprint 6) ──────────────────────────────────────── */
+
+  mswHttp.get(url('/documents'), ({ request }) => {
+    const params = new URL(request.url).searchParams;
+    const filters = {
+      search: params.get('search') ?? undefined,
+      category: params.get('category') ?? undefined,
+      caseId: params.get('case_id') ?? undefined,
+      propertyId: params.get('property_id') ?? undefined,
+    };
+    const results = listDocuments(filters);
+    return HttpResponse.json({ results, next: null, previous: null, count: results.length });
+  }),
+
+  mswHttp.get(url('/documents/categories'), ({ request }) => {
+    const params = new URL(request.url).searchParams;
+    return HttpResponse.json({
+      results: documentCategoryCounts({
+        search: params.get('search') ?? undefined,
+        caseId: params.get('case_id') ?? undefined,
+        propertyId: params.get('property_id') ?? undefined,
+      }),
+      next: null,
+      previous: null,
+    });
+  }),
+
+  mswHttp.post(url('/documents'), async ({ request }) => {
+    const body = (await request.json()) as Parameters<typeof createDocument>[0];
+    if (!body.title || !body.file_name) {
+      return errorEnvelope('validation_error', 'Title and file are required', 400);
+    }
+    /**
+     * MVP-এর সীমা — ২৫ MB। Server-ই শেষ কথা; UI আগেই আটকায় শুধু
+     * ব্যবহারকারীর সময় বাঁচাতে, নিরাপত্তার জন্য নয় (FE3)।
+     */
+    if (body.file_size > 25 * 1024 * 1024) {
+      return errorEnvelope('file_too_large', 'File exceeds the 25 MB limit', 413);
+    }
+    return HttpResponse.json(createDocument(body), { status: 201 });
+  }),
+
+  mswHttp.get(url('/documents/:id'), ({ params }) => {
+    const found = getDocument(String(params.id));
+    return found ? HttpResponse.json(found) : errorEnvelope('not_found', 'Document not found', 404);
+  }),
+
+  mswHttp.post(url('/documents/:id/versions'), async ({ params, request }) => {
+    const body = (await request.json()) as Parameters<typeof addDocumentVersion>[1];
+    const found = addDocumentVersion(String(params.id), body);
+    return found
+      ? HttpResponse.json(found, { status: 201 })
+      : errorEnvelope('not_found', 'Document not found', 404);
+  }),
+
+  mswHttp.patch(url('/documents/:id/visibility'), async ({ params, request }) => {
+    const body = (await request.json()) as { client_visible: boolean };
+    const found = setDocumentVisibility(String(params.id), body.client_visible);
+    return found ? HttpResponse.json(found) : errorEnvelope('not_found', 'Document not found', 404);
+  }),
+
+  mswHttp.delete(url('/documents/:id'), ({ params }) =>
+    deleteDocument(String(params.id))
+      ? new HttpResponse(null, { status: 204 })
+      : errorEnvelope('not_found', 'Document not found', 404),
+  ),
+
+  /* ── Properties & land records (Sprint 6) ──────────────────────── */
+
+  mswHttp.get(url('/properties'), ({ request }) => {
+    const params = new URL(request.url).searchParams;
+    const results = listProperties({
+      search: params.get('search') ?? undefined,
+      caseId: params.get('case_id') ?? undefined,
+    });
+    return HttpResponse.json({ results, next: null, previous: null, count: results.length });
+  }),
+
+  mswHttp.post(url('/properties'), async ({ request }) => {
+    const body = (await request.json()) as Parameters<typeof createProperty>[0];
+    if (!body.title) {
+      return errorEnvelope('validation_error', 'Title is required', 400);
+    }
+    return HttpResponse.json(createProperty(body), { status: 201 });
+  }),
+
+  mswHttp.get(url('/properties/:id'), ({ params }) => {
+    const found = getProperty(String(params.id));
+    return found ? HttpResponse.json(found) : errorEnvelope('not_found', 'Property not found', 404);
+  }),
+
+  mswHttp.patch(url('/properties/:id'), async ({ params, request }) => {
+    const body = (await request.json()) as Parameters<typeof updateProperty>[1];
+    const found = updateProperty(String(params.id), body);
+    return found ? HttpResponse.json(found) : errorEnvelope('not_found', 'Property not found', 404);
+  }),
+
+  mswHttp.post(url('/properties/:id/land-records'), async ({ params, request }) => {
+    const body = (await request.json()) as Parameters<typeof addLandRecord>[1];
+    const found = addLandRecord(String(params.id), body);
+    return found
+      ? HttpResponse.json(found, { status: 201 })
+      : errorEnvelope('not_found', 'Property not found', 404);
+  }),
+
+  mswHttp.delete(url('/properties/:id/land-records/:childId'), ({ params }) => {
+    const found = removeLandRecord(String(params.id), String(params.childId));
+    return found ? HttpResponse.json(found) : errorEnvelope('not_found', 'Property not found', 404);
+  }),
+
+  mswHttp.post(url('/properties/:id/deeds'), async ({ params, request }) => {
+    const body = (await request.json()) as Parameters<typeof addDeed>[1];
+    const found = addDeed(String(params.id), body);
+    return found
+      ? HttpResponse.json(found, { status: 201 })
+      : errorEnvelope('not_found', 'Property not found', 404);
+  }),
+
+  mswHttp.delete(url('/properties/:id/deeds/:childId'), ({ params }) => {
+    const found = removeDeed(String(params.id), String(params.childId));
+    return found ? HttpResponse.json(found) : errorEnvelope('not_found', 'Property not found', 404);
+  }),
+
+  mswHttp.post(url('/properties/:id/mutations'), async ({ params, request }) => {
+    const body = (await request.json()) as Parameters<typeof addMutation>[1];
+    const found = addMutation(String(params.id), body);
+    return found
+      ? HttpResponse.json(found, { status: 201 })
+      : errorEnvelope('not_found', 'Property not found', 404);
+  }),
+
+  mswHttp.delete(url('/properties/:id/mutations/:childId'), ({ params }) => {
+    const found = removeMutation(String(params.id), String(params.childId));
+    return found ? HttpResponse.json(found) : errorEnvelope('not_found', 'Property not found', 404);
+  }),
+
+  mswHttp.post(url('/properties/:id/taxes'), async ({ params, request }) => {
+    const body = (await request.json()) as Parameters<typeof addLandTax>[1];
+    const found = addLandTax(String(params.id), body);
+    return found
+      ? HttpResponse.json(found, { status: 201 })
+      : errorEnvelope('not_found', 'Property not found', 404);
+  }),
+
+  mswHttp.delete(url('/properties/:id/taxes/:childId'), ({ params }) => {
+    const found = removeLandTax(String(params.id), String(params.childId));
+    return found ? HttpResponse.json(found) : errorEnvelope('not_found', 'Property not found', 404);
+  }),
+
+  mswHttp.post(url('/properties/:id/cases'), async ({ params, request }) => {
+    const body = (await request.json()) as { case_id: string };
+    const found = linkPropertyCase(String(params.id), body.case_id);
+    return found
+      ? HttpResponse.json(found, { status: 201 })
+      : errorEnvelope('not_found', 'Property not found', 404);
+  }),
+
+  mswHttp.delete(url('/properties/:id/cases/:caseId'), ({ params }) => {
+    const found = unlinkPropertyCase(String(params.id), String(params.caseId));
+    return found ? HttpResponse.json(found) : errorEnvelope('not_found', 'Property not found', 404);
+  }),
+
+  /* ── Billing (Sprint 7) ────────────────────────────────────────── */
+
+  mswHttp.get(url('/invoices'), ({ request }) => {
+    const params = new URL(request.url).searchParams;
+    const results = listInvoices(
+      {
+        search: params.get('search') ?? undefined,
+        status: params.get('status') ?? undefined,
+        caseId: params.get('case_id') ?? undefined,
+        clientId: params.get('client_id') ?? undefined,
+      },
+      todayInDhaka(),
+    );
+    return HttpResponse.json({ results, next: null, previous: null, count: results.length });
+  }),
+
+  mswHttp.post(url('/invoices'), async ({ request }) => {
+    const body = (await request.json()) as Parameters<typeof createInvoice>[0];
+    if (!body.client_id) {
+      return errorEnvelope('validation_error', 'Client is required', 400);
+    }
+    if (!body.lines || body.lines.length === 0) {
+      return errorEnvelope('validation_error', 'At least one line is required', 400);
+    }
+
+    const client = getClient(body.client_id);
+    if (!client) return errorEnvelope('not_found', 'Client not found', 404);
+
+    return HttpResponse.json(
+      createInvoice(body, {
+        id: client.id,
+        name: client.full_name_bn ?? client.full_name,
+        address: client.address,
+        mobile: client.mobile,
+      }),
+      { status: 201 },
+    );
+  }),
+
+  mswHttp.get(url('/invoices/:id'), ({ params }) => {
+    const found = getInvoice(String(params.id), todayInDhaka());
+    return found ? HttpResponse.json(found) : errorEnvelope('not_found', 'Invoice not found', 404);
+  }),
+
+  mswHttp.patch(url('/invoices/:id'), async ({ params, request }) => {
+    const body = (await request.json()) as Parameters<typeof updateInvoice>[1];
+    const result = updateInvoice(String(params.id), body, todayInDhaka());
+    if (result === undefined) return errorEnvelope('not_found', 'Invoice not found', 404);
+    // প্রদত্ত চালান অপরিবর্তনীয় — server-ই শেষ কথা, UI শুধু বোতাম লুকায় (FE3)
+    if (result === 'LOCKED') {
+      return errorEnvelope('invoice_locked', 'An issued invoice cannot be edited', 409);
+    }
+    return HttpResponse.json(result);
+  }),
+
+  mswHttp.post(url('/invoices/:id/issue'), ({ params }) => {
+    const result = issueInvoice(String(params.id), todayInDhaka());
+    return result ? HttpResponse.json(result) : errorEnvelope('not_found', 'Invoice not found', 404);
+  }),
+
+  mswHttp.post(url('/invoices/:id/cancel'), ({ params }) => {
+    const found = cancelInvoice(String(params.id), todayInDhaka());
+    return found ? HttpResponse.json(found) : errorEnvelope('not_found', 'Invoice not found', 404);
+  }),
+
+  mswHttp.get(url('/invoices/:id/payments'), ({ params }) =>
+    HttpResponse.json({ results: listPayments(String(params.id)), next: null, previous: null }),
+  ),
+
+  mswHttp.post(url('/invoices/:id/payments'), async ({ params, request }) => {
+    const body = (await request.json()) as Parameters<typeof recordPayment>[1];
+    if (!body.amount || !body.paid_on) {
+      return errorEnvelope('validation_error', 'Amount and date are required', 400);
+    }
+    const found = recordPayment(String(params.id), body, todayInDhaka());
+    return found
+      ? HttpResponse.json(found, { status: 201 })
+      : errorEnvelope('not_found', 'Invoice not found', 404);
+  }),
+
+  mswHttp.get(url('/cases/:id/ledger'), ({ params }) =>
+    HttpResponse.json(buildCaseLedger(String(params.id))),
+  ),
+
+  mswHttp.get(url('/cases/:id/fee-agreement'), ({ params }) => {
+    const found = getFeeAgreement(String(params.id));
+    return found ? HttpResponse.json(found) : new HttpResponse(null, { status: 204 });
+  }),
+
+  mswHttp.put(url('/cases/:id/fee-agreement'), async ({ params, request }) => {
+    const body = (await request.json()) as Omit<Parameters<typeof saveFeeAgreement>[0], 'case_id'>;
+    return HttpResponse.json(saveFeeAgreement({ ...body, case_id: String(params.id) }));
+  }),
+
+  mswHttp.get(url('/reports/financial'), ({ request }) => {
+    if (!request.headers.get('Authorization')) {
+      return errorEnvelope('unauthorized', 'Authentication required', 401);
+    }
+    return HttpResponse.json(buildFinancialSummary(todayInDhaka()));
+  }),
+
+  /* ── Firm settings ─────────────────────────────────────────────── */
+
+  mswHttp.get(url('/firm/settings'), () => HttpResponse.json(getFirmSettings())),
+
+  mswHttp.patch(url('/firm/settings'), async ({ request }) => {
+    const body = (await request.json()) as Parameters<typeof updateFirmSettings>[0];
+    return HttpResponse.json(updateFirmSettings(body));
   }),
 ];

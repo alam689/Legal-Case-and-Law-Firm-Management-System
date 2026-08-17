@@ -36,9 +36,15 @@ type TabId = (typeof TABS)[number]['id'];
 export default function CaseDetailPage({
   renderTimeline,
   renderHearings,
+  renderDocuments,
+  renderProperty,
+  renderBilling,
 }: {
   renderTimeline?: (caseId: string) => ReactNode;
   renderHearings?: (caseId: string) => ReactNode;
+  renderDocuments?: (caseId: string) => ReactNode;
+  renderProperty?: (caseId: string) => ReactNode;
+  renderBilling?: (caseId: string) => ReactNode;
 } = {}) {
   const { t } = useTranslation();
   const { locale } = useLocale();
@@ -126,6 +132,12 @@ export default function CaseDetailPage({
           renderTimeline(caseDetail.id)
         ) : tab === 'hearings' && renderHearings ? (
           renderHearings(caseDetail.id)
+        ) : tab === 'documents' && renderDocuments ? (
+          renderDocuments(caseDetail.id)
+        ) : tab === 'property' && renderProperty ? (
+          renderProperty(caseDetail.id)
+        ) : tab === 'billing' && renderBilling ? (
+          renderBilling(caseDetail.id)
         ) : (
           <EmptyState
             title={t(`cases.detail.tabs.${tab}`)}

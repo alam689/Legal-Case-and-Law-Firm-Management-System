@@ -41,15 +41,18 @@ export function Money({
   value,
   className,
   decimals = true,
+  showSymbol = true,
 }: {
   value: string | number | null | undefined;
   className?: string;
   decimals?: boolean;
+  /** চালানের ছকে প্রতিটি ঘরে ৳ থাকলে সংখ্যা পড়া কঠিন — সেখানে বন্ধ। */
+  showSymbol?: boolean;
 }) {
   const { locale } = useLocale();
   return (
     <span className={cn('font-latin tabular-nums', className)}>
-      {formatMoney(value, locale, { decimals })}
+      {formatMoney(value, locale, { decimals, showSymbol })}
     </span>
   );
 }

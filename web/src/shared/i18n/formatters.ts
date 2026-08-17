@@ -143,3 +143,39 @@ export function formatNumber(value: number | null | undefined, locale: Locale = 
   if (value === null || value === undefined || !Number.isFinite(value)) return '—';
   return localiseDigits(new Intl.NumberFormat('en-IN').format(value), locale);
 }
+
+/** KB/MB — একক দুই ভাষাতেই এক, শুধু অঙ্ক স্থানীয় হয়। */
+const FILE_SIZE_UNITS = ['B', 'KB', 'MB', 'GB'] as const;
+
+export function formatFileSize(bytes: number | null | undefined, locale: Locale = 'bn'): string {
+  if (bytes === null || bytes === undefined || !Number.isFinite(bytes) || bytes < 0) return '—';
+
+  let size = bytes;
+  let unitIndex = 0;
+  while (size >= 1024 && unitIndex < FILE_SIZE_UNITS.length - 1) {
+    size /= 1024;
+    unitIndex += 1;
+  }
+
+  // ১ KB-র নিচে ভগ্নাংশ অর্থহীন; তার উপরে এক ঘর যথেষ্ট
+  const decimals = unitIndex === 0 ? 0 : 1;
+  const formatted = new Intl.NumberFormat('en-IN', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(size);
+
+  return `${localiseDigits(formatted, locale)} ${FILE_SIZE_UNITS[unitIndex]}`;
+}
+
+/**
+ * শতক — বাংলাদেশে জমির প্রচলিত একক। DECIMAL string-এ আসে, তাই
+ * ট্রেইলিং শূন্য ছেঁটে দেখানো হয় (`33.000` → `৩৩`)।
+ */
+export function formatArea(value: string | number | null | undefined, locale: Locale = 'bn'): string {
+  if (value === null || value === undefined || value === '') return '—';
+  const numeric = typeof value === 'string' ? Number(value) : value;
+  if (!Number.isFinite(numeric)) return '—';
+
+  const formatted = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 3 }).format(numeric);
+  return localiseDigits(formatted, locale);
+}

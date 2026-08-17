@@ -59,7 +59,7 @@ export default function LandingPage({ calculator }: { calculator?: ReactNode }) 
 
       <footer className="border-t border-border px-6 py-8">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 text-xs text-fg-subtle">
-          <p>{t('landing.footer.rights')}</p>
+          <p>{t('common.footer.rights')}</p>
           <p className="max-w-3xl leading-relaxed">{t('legal.disclaimer')}</p>
         </div>
       </footer>
@@ -80,7 +80,7 @@ function SiteHeader() {
           </span>
           <span>
             <span className="block text-sm font-semibold">{t('common.appName')}</span>
-            <span className="block text-xs text-fg-subtle">{t('landing.footer.tagline')}</span>
+            <span className="block text-xs text-fg-subtle">{t('common.footer.tagline')}</span>
           </span>
         </Link>
 

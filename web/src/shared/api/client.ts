@@ -140,6 +140,15 @@ export function createHttpClient(deps: HttpClientDeps) {
       body?: unknown,
       options: Omit<RequestOptions, 'method' | 'body'> = {},
     ) => send<T>(path, { ...options, method: 'PATCH', body }),
+    /**
+     * PUT — যেখানে সম্পূর্ণ resource প্রতিস্থাপিত হয় এবং না থাকলে তৈরি হয়।
+     * ফি-চুক্তি এমনই: মামলাপ্রতি একটিই, তাই "তৈরি না সম্পাদনা" প্রশ্নটাই ওঠে না।
+     */
+    put: <T>(
+      path: string,
+      body?: unknown,
+      options: Omit<RequestOptions, 'method' | 'body'> = {},
+    ) => send<T>(path, { ...options, method: 'PUT', body }),
     delete: <T>(path: string, options: Omit<RequestOptions, 'method' | 'body'> = {}) =>
       send<T>(path, { ...options, method: 'DELETE' }),
   };

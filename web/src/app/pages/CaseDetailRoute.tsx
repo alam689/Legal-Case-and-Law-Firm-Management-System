@@ -16,7 +16,25 @@ const CaseHearingsTab = lazy(() =>
   })),
 );
 
-/** Case detail-এর tab গুলোতে hearings feature-এর content যুক্ত করা হয় (§4)। */
+const CaseDocumentsTab = lazy(() =>
+  import('@/features/documents/components/CaseDocumentsTab').then((module) => ({
+    default: module.CaseDocumentsTab,
+  })),
+);
+
+const CasePropertyTab = lazy(() =>
+  import('@/features/properties/components/CasePropertyTab').then((module) => ({
+    default: module.CasePropertyTab,
+  })),
+);
+
+const CaseBillingTab = lazy(() =>
+  import('@/features/billing/components/CaseBillingTab').then((module) => ({
+    default: module.CaseBillingTab,
+  })),
+);
+
+/** Case detail-এর tab গুলোতে অন্য feature-এর content যুক্ত করা হয় (§4)। */
 export default function CaseDetailRoute() {
   return (
     <Suspense fallback={<SkeletonList rows={5} />}>
@@ -29,6 +47,21 @@ export default function CaseDetailRoute() {
         renderHearings={(caseId) => (
           <Suspense fallback={<SkeletonList rows={4} />}>
             <CaseHearingsTab caseId={caseId} />
+          </Suspense>
+        )}
+        renderDocuments={(caseId) => (
+          <Suspense fallback={<SkeletonList rows={4} />}>
+            <CaseDocumentsTab caseId={caseId} />
+          </Suspense>
+        )}
+        renderProperty={(caseId) => (
+          <Suspense fallback={<SkeletonList rows={3} />}>
+            <CasePropertyTab caseId={caseId} />
+          </Suspense>
+        )}
+        renderBilling={(caseId) => (
+          <Suspense fallback={<SkeletonList rows={4} />}>
+            <CaseBillingTab caseId={caseId} />
           </Suspense>
         )}
       />

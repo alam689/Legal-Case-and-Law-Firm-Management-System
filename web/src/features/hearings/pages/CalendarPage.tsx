@@ -142,7 +142,7 @@ export default function CalendarPage() {
                   key={key}
                   className={cn(
                     'pb-2 text-center text-xs font-semibold uppercase tracking-wide',
-                    WEEKEND_KEYS.has(key) ? 'text-fg-subtle/70' : 'text-fg-subtle',
+                    WEEKEND_KEYS.has(key) ? 'text-weekend' : 'text-fg-subtle',
                   )}
                 >
                   {t(`calendar.weekdays.${key}`)}
@@ -188,8 +188,16 @@ export default function CalendarPage() {
                         ? 'border-primary bg-primary-muted'
                         : 'border-transparent hover:bg-surface-muted',
                       isToday && !isSelected && 'border-primary/40',
-                      // বন্ধের দিন নিষ্প্রভ — কর্মদিবস চোখে আগে পড়ে
-                      closed && !isSelected && 'bg-surface-muted/60',
+                      /*
+                       * বন্ধের দিন নিজস্ব রঙে — নিষ্প্রভ ধূসরে শুক্র/শনি প্রায়
+                       * অদৃশ্য থাকত (বিশেষত রাতের থিমে)। সাপ্তাহিক ছুটি বেগুনি,
+                       * সরকারি ছুটি লাল — দুটো আলাদা, দুটোই কর্মদিবস থেকে আলাদা।
+                       */
+                      closed &&
+                        !isSelected &&
+                        (closed.kind === 'WEEKEND'
+                          ? 'border-weekend/35 bg-weekend-bg'
+                          : 'border-danger/35 bg-danger-bg'),
                     )}
                   >
                     <span
@@ -198,7 +206,7 @@ export default function CalendarPage() {
                         isToday
                           ? 'font-bold text-primary'
                           : closed?.kind === 'WEEKEND'
-                            ? 'text-fg-subtle'
+                            ? 'font-medium text-weekend'
                             : closed
                               ? 'font-medium text-danger'
                               : 'text-fg',
@@ -242,11 +250,14 @@ export default function CalendarPage() {
 
             <ul className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border px-1 pt-3 text-xs text-fg-muted">
               <li className="flex items-center gap-1.5">
-                <span className="h-3 w-3 rounded bg-surface-muted" aria-hidden />
+                <span
+                  className="h-3 w-3 rounded bg-weekend-bg ring-1 ring-weekend/50"
+                  aria-hidden
+                />
                 {t('calendar.legend.weekend')}
               </li>
               <li className="flex items-center gap-1.5">
-                <span className="h-3 w-3 rounded bg-danger/20 ring-1 ring-danger/40" aria-hidden />
+                <span className="h-3 w-3 rounded bg-danger-bg ring-1 ring-danger/50" aria-hidden />
                 {t('calendar.legend.holiday')}
               </li>
               <li className="flex items-center gap-1.5">
@@ -270,7 +281,7 @@ export default function CalendarPage() {
                 className={cn(
                   'flex items-center gap-2 rounded-md px-3 py-2 text-xs',
                   selectedClosed.kind === 'WEEKEND'
-                    ? 'bg-surface-muted text-fg-muted'
+                    ? 'bg-weekend-bg text-weekend'
                     : 'bg-danger-bg text-danger',
                 )}
               >

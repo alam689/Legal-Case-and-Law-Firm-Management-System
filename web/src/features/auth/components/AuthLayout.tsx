@@ -42,7 +42,7 @@ export function AuthLayout({
           </span>
           <span>
             <span className="block text-sm font-semibold">{t('common.appName')}</span>
-            <span className="block text-xs text-white/70">{t('landing.footer.tagline')}</span>
+            <span className="block text-xs text-white/70">{t('common.footer.tagline')}</span>
           </span>
         </Link>
 
@@ -59,7 +59,7 @@ export function AuthLayout({
           </ul>
         </div>
 
-        <p className="text-xs text-white/60">{t('landing.footer.rights')}</p>
+        <p className="text-xs text-white/60">{t('common.footer.rights')}</p>
       </aside>
 
       <main className="flex flex-col bg-bg">

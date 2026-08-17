@@ -44,6 +44,17 @@ export default defineConfig(({ mode }) => ({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: false,
+    /**
+     * Vitest-এর default ৫ সেকেন্ড এই suite-এর জন্য আর যথেষ্ট নয়।
+     *
+     * এখানকার test গুলো unit নয় — প্রতিটিতে MSW handler, react-query-র
+     * fetch চক্র, debounced ইনপুট (৩০০ms) ও Radix-এর portal মিলিয়ে আসল
+     * সময় লাগে। একা চালালে সবচেয়ে ভারী test ~১.৭s, কিন্তু ২০টি file
+     * সমান্তরালে চললে worker গুলো CPU ভাগ করে নেয় এবং সেটিই ৫s ছাড়িয়ে
+     * যায়। সীমা বাড়ানো হয়েছে যাতে ব্যর্থতা মানে সত্যিই ভাঙা কোড, শুধু
+     * ব্যস্ত মেশিন নয় — ধীর test আলাদা করে চেনা যায় duration রিপোর্টে।
+     */
+    testTimeout: 15_000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

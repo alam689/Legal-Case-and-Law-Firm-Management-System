@@ -2,9 +2,10 @@
 
 React 18 + Vite + TypeScript. পূর্ণ পরিকল্পনা → [`docs/05-frontend-plan.md`](../docs/05-frontend-plan.md)
 
-**Sprint 1 (Foundation), 2 (Client & Case), 3 (★ Core loop), 4 (Diary,
-Calendar, Notifications) ও 5-এর frontend (metric dashboard, তালিকার
-কর্মক্ষমতা, a11y audit) — সম্পন্ন।**
+**Sprint 1–7 সম্পন্ন — lawyer web app feature-সম্পূর্ণ।** Foundation,
+Client & Case, ★ Core loop, Diary/Calendar/Notifications, metric ও a11y,
+Documents & Property, এবং Billing & Settings — সবই চালু; কোনো
+"Coming soon" placeholder অবশিষ্ট নেই।
 Backend এখনো নেই; সব API call MSW mock-এ যায় (§11)। Mock store in-memory —
 তৈরি করা মক্কেল ও মামলা পাতা reload না করা পর্যন্ত টিকে থাকে।
 
@@ -50,7 +51,9 @@ Backend তৈরি হলে `web/.env.local`-এ `VITE_API_MOCKING=disabled` 
 web/src/
 ├── app/         bootstrap, routing, layout, providers
 ├── shared/      api, auth, i18n, theme, ui, hooks, config, lib
-├── features/    marketing, auth, dashboard, clients, cases, hearings, inheritance
+├── features/    marketing, auth, dashboard, clients, cases, hearings,
+│               documents, properties, billing, settings, notifications,
+│               metrics, inheritance
 └── test/        msw handler, fixture, render helper
 ```
 
@@ -99,6 +102,63 @@ test নিশ্চিত করে যে স্থির তালিকা�
 একাধিক কারণ মিললে অগ্রাধিকার: গেজেট → স্থির জাতীয় দিবস → সাপ্তাহিক
 ছুটি। তাই ২৫ ডিসেম্বর শুক্রবারে পড়লেও "বড়দিন" দেখায়। বন্ধের দিনে
 শুনানি লেখা থাকলে দিনের প্যানেলে সতর্কবার্তা ওঠে — শুনানি লুকানো হয় না।
+
+## নথি ও সম্পত্তি (Sprint 6)
+
+[`features/documents/`](src/features/documents/) · [`features/properties/`](src/features/properties/)
+
+**নথি** — drag-drop বা native picker, একাধিক ফাইল একসাথে। প্রতিটি ফাইলের
+নিজস্ব অবস্থা ও **আলাদা retry**: আদালত থেকে ফেরার পথে ৩G-তে পাঁচটি স্ক্যান
+পাঠানোর সময় একটি ব্যর্থ হলে পুরো ব্যাচ আবার পাঠানো নিষ্ঠুর।
+
+- **স্ক্যান শেষ না হলে ফাইল খোলা যায় না** — "আপলোড হয়েছে" আর "খোলা যাবে"
+  আলাদা কথা। server স্ক্যান `CLEAN` না হওয়া পর্যন্ত কোনো URL-ই দেয় না, আর
+  `PENDING` থাকলে তালিকা নিজে থেকেই আবার আনে।
+- **শতাংশ নয়, ধাপ** — mock ও `fetch` কোনোটিই বিশ্বাসযোগ্য byte-progress দেয়
+  না, আর বানানো শতাংশ মিথ্যা অগ্রগতি (FE9-এর বিপরীত)। ব্যাচে সত্যিকারের
+  "কত-র মধ্যে কত" দেখানো হয়।
+- **পুরনো সংস্করণ মুছে না** — ছয় মাস পরে "কোনটি আদালতে দাখিল হয়েছিল"
+  প্রশ্নের উত্তর দিতে না পারাটাই সবচেয়ে বড় ক্ষতি।
+- **দৃশ্যমানতা (rule A4)** — নতুন নথি শুধু চেম্বারের। খোলা **ও** বন্ধ করা
+  দুটোতেই confirm লাগে, এবং কোথাও optimistic নয়।
+
+**সম্পত্তি** — একই জমির সি.এস./এস.এ./আর.এস./বি.এস. জরিপে আলাদা খতিয়ান ও দাগ
+থাকে, আর মামলার তর্কটাই প্রায়ই সেই অমিল নিয়ে। তাই জরিপ রেকর্ড একটি ঘর নয়,
+একটি তালিকা — সবগুলো পাশাপাশি দেখা যায়।
+
+- দলিল, নামজারি ও খাজনা আলাদা tab-এ; নামজারির অবস্থা রঙে চিহ্নিত।
+- **একটিই খোঁজার ঘর, তিন রকম চাবি** — দাগ, খতিয়ান বা মৌজা। আইনজীবী হাতে যা
+  লেখা আছে সেটিই টাইপ করেন; কোন ঘরে বসাতে হবে সেটি তাঁর মনে রাখার কথা নয়।
+- একই জমি একাধিক মামলায় থাকতে পারে (দেওয়ানি + নামজারি আপিল) — সংযোগ
+  সম্পত্তির পাতা থেকে, আর মামলার পাতায় শুধু দেখা ও যাওয়া।
+
+## বিলিং ও সেটিংস (Sprint 7)
+
+[`features/billing/`](src/features/billing/) · [`features/settings/`](src/features/settings/)
+
+**টাকার হিসাব পয়সায়, float-এ নয়** ([`money.ts`](../packages/domain/src/money.ts))।
+`0.1 + 0.2 === 0.30000000000000004` — দশটি সারি যোগ করলে সেই ভুল জমে গিয়ে
+মোট অঙ্ক এক পয়সা এদিক-ওদিক হয়, আর মক্কেল সেটি ধরলে পুরো হিসাবের
+বিশ্বাসযোগ্যতা প্রশ্নের মুখে পড়ে। **UI-র live total আর MSW mock একই
+`invoiceTotals()` ব্যবহার করে**, তাই টাইপ করতে করতে যা দেখা যায় আর
+সংরক্ষণের পরে যা থাকে — দুটো এক।
+
+- **খসড়া → প্রদত্ত অপরিবর্তনীয়** — issue করার পরে সম্পাদনা বন্ধ, শুধু পরিশোধ
+  বা বাতিল। Server-ও ৪০৯ দেয়; UI শুধু বোতাম লুকায় (FE3)।
+- **বকেয়ার চেয়ে বেশি পরিশোধে সতর্ক, কিন্তু আটকায় না** — অগ্রিম বা একসাথে
+  দুটি চালানের টাকা দেওয়া স্বাভাবিক। সত্য লিখতে বাধা দেওয়ার চেয়ে একবার
+  জিজ্ঞেস করা ভালো।
+- **`OVERDUE` সংরক্ষিত নয়, গণনাকৃত** — তারিখ ও বকেয়া থেকে। লিখে রাখলে
+  তারিখ পেরোনোর পরেও পুরনো অবস্থা দেখাত যতক্ষণ না কেউ কিছু সম্পাদনা করে।
+- **সেটিংসে সরাসরি লেটারহেডের নমুনা** — কোন লেখা কাগজে কোথায় যাবে তা
+  অনুমান করতে হয় না।
+
+**যা ইচ্ছাকৃতভাবে নেওয়া হয়নি:**
+
+| বাদ | কেন |
+| --- | --- |
+| Recharts (roadmap-এ ছিল) | gzip-এও ~১০০ KB; route chunk budget ৮০ KB (§12)। মেট্রিক dashboard-এর মতোই সাধারণ `div` দিয়ে বার, আর প্রকৃত সংখ্যা পাশের টেবিলে — screen reader-এও কিছু হারায় না |
+| PDF library | দাপ্তরিক PDF **backend** তৈরি করবে, যাতে আইনজীবীর ব্রাউজার, মক্কেলের মোবাইল ও ইমেইলের সংযুক্তি — সব কপি অক্ষরে অক্ষরে এক হয়। আপাতত ব্রাউজারের ছাপার নমুনা, আর সেটি পর্দায় স্পষ্ট করে বলা আছে |
 
 ## উত্তরাধিকার ক্যালকুলেটর
 
@@ -153,12 +213,42 @@ Sprint 5-এর demo শর্ত "3G throttle-এ dashboard < 1.2 s" **মা�
 
 initial payload ≈ ১৭৩ KB। Fast 3G-তে (~200 KB/s) সেটি ~০.৯ s — শর্তের
 কাছাকাছি; **Slow 3G-তে (~50 KB/s) ~৩.৫ s — শর্ত ভাঙে**। initial JS
-budget-এর ৯২% ইতিমধ্যে খরচ হয়ে গেছে, তাই এটি নজরে রাখার মতো ঝুঁকি।
+budget-এর **৮৯%** খরচ (১৬১.০ / ১৮০ KB)। Sprint 6-এর শেষে সেটি ৯৬%-এ
+পৌঁছেছিল; নিচের lazy locale loading ১৪.৩ KB ফিরিয়ে এনেছে, আর Sprint 7
+কোনো chart/PDF library যোগ না করায় বৃদ্ধি ৩.২ KB-তেই থেমেছে।
+
+### Locale chunk
+
+সব string একসাথে পাঠানো মানে লগইন পর্দায় খাজনার রসিদের লেখাও ডাউনলোড
+হওয়া। তাই catalogue **core + ৯টি lazy chunk**-এ ভাগ
+([`packages/i18n/src/`](../packages/i18n/src/)):
+
+- **core** (static) — app shell, auth, theme, ত্রুটি, validation, আইনি
+  বিজ্ঞপ্তি। এগুলো ছাড়া কোনো পর্দাই সম্পূর্ণ হয় না।
+- **chunk** (lazy) — landing, dashboard, clients, cases, hearings,
+  documents, properties, notifications, metrics। Route-এর component-এর
+  সাথে **একই `Promise.all`-এ** আসে, তাই কাঁচা key (`documents.title`)
+  কখনো এক frame-এর জন্যও দেখা যায় না।
+
+i18next-এর namespace সুবিধা ইচ্ছাকৃতভাবে নেওয়া হয়নি — তাতে প্রতিটি call
+site-কে `t('documents:title')` লিখতে হত। বদলে একটিই `translation`
+namespace রেখে chunk গুলো deep-merge করা হয়, তাই `t('documents.title')`
+অপরিবর্তিত।
+
+**নতুন feature যোগ করলে:** chunk-টি `routes.tsx`-এ ঘোষণা করুন, আর একই কথা
+[`i18n-chunks.test.ts`](src/test/__tests__/i18n-chunks.test.ts)-এর
+`ALLOWED`-এ লিখুন। ভুলে গেলে সেই test-ই ব্যর্থ হবে — বাকি test গুলো
+setup-এ পুরো catalogue বসিয়ে নেয় বলে তারা এটি ধরতে পারে না।
 Lighthouse throttle দিয়ে আসল মাপ Sprint 8-এর budget enforce ধাপে নেওয়া
 হবে; সংখ্যা না পাওয়া পর্যন্ত এই শর্ত পাস ধরা হচ্ছে না।
 
 ## যা এখনো বাকি (পরের sprint)
 
-Storybook (S2 থেকে বকেয়া) · Sentry wiring · Playwright E2E (S8) · offline read
+**কোনো feature বাকি নেই** — যা বাকি তা Sprint 8-এর hardening ও পুরনো ঋণ:
+Storybook (S2 থেকে বকেয়া) · Sentry wiring · Playwright E2E · offline read
 cache persist · রঙের বৈসাদৃশ্য হাতে যাচাই (jsdom-এ axe তা মাপতে পারে না)
-· 3G throttle-এ dashboard-এর আসল মাপ
+· 3G throttle-এ dashboard-এর আসল মাপ · আপলোডের byte-progress (backend
+multipart চালু হলে)
+
+সবচেয়ে বড় বাকি কাজ frontend-এর বাইরে: **backend**। ৬৭টি endpoint আজও
+MSW mock-এ চলে।

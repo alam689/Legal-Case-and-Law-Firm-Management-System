@@ -17,15 +17,24 @@ import type {
   CaseStatus,
   ClientLinkStatus,
   DateSource,
+  DeedType,
   DeliveryStatus,
+  DocumentCategory,
+  FeeType,
   FirmRole,
   FirmType,
   HearingOutcome,
   HearingStatus,
+  InvoiceLineCategory,
+  InvoiceStatus,
+  LandClass,
+  LandRecordType,
   Language,
+  MutationStatus,
   NotificationChannel,
   PartySide,
   PartyType,
+  PaymentMethod,
   UserType,
   VerificationStatus,
 } from '@caseflow/domain';
@@ -512,3 +521,386 @@ export interface CaseWriteRequest {
   relief_sought?: string | null;
   internal_notes?: string | null;
 }
+
+/* ── Documents (docs/01-scope F-DOC-01…09) ───────────────────────────── */
+
+/**
+ * ভাইরাস স্ক্যান — upload আর availability এক জিনিস নয়।
+ *
+ * ফাইল server-এ পৌঁছানোর পরেও স্ক্যান শেষ না হওয়া পর্যন্ত সেটি খোলা যাবে
+ * না। UI এই অবস্থাটি সৎভাবে দেখায় ("স্ক্যান চলছে"), কারণ "আপলোড হয়েছে"
+ * বলে দেখিয়ে পরে ফাইল না খোলাটাই বেশি বিভ্রান্তিকর (docs/02-architecture §9)।
+ */
+export type VirusScanStatus = 'PENDING' | 'CLEAN' | 'INFECTED' | 'SKIPPED';
+
+export interface DocumentVersionItem {
+  id: Uuid;
+  version: number;
+  file_name: string;
+  /** bytes */
+  file_size: number;
+  mime_type: string;
+  scan_status: VirusScanStatus;
+  uploaded_at: IsoDateTime;
+  uploaded_by_name: string | null;
+  /** কেন নতুন সংস্করণ — "সই করা কপি", "সংশোধিত খসড়া" */
+  note: string | null;
+}
+
+export interface DocumentListItem {
+  id: Uuid;
+  title: string;
+  category: DocumentCategory;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  /** বর্তমান সংস্করণ নম্বর — পুরনোগুলো `DocumentDetail.versions`-এ */
+  version: number;
+  version_count: number;
+  scan_status: VirusScanStatus;
+  /**
+   * Rule A4 — default সবসময় `false`। মক্কেল কী দেখতে পাবেন সেটি
+   * আইনজীবীর সচেতন সিদ্ধান্ত, কখনো নীরব default নয়।
+   */
+  client_visible: boolean;
+  case_id: Uuid | null;
+  case_display_number: string | null;
+  property_id: Uuid | null;
+  document_date: IsoDate | null;
+  uploaded_at: IsoDateTime;
+  uploaded_by_name: string | null;
+}
+
+export interface DocumentDetail extends DocumentListItem {
+  description: string | null;
+  /** স্ক্যান CLEAN না হওয়া পর্যন্ত `null` — server কোনো URL দেবে না। */
+  file_url: string | null;
+  versions: DocumentVersionItem[];
+}
+
+/**
+ * `POST /documents` — MVP-তে metadata + file একসাথে multipart-এ যায়।
+ * এখানে file-টি বাদ, কারণ contract type শুধু JSON অংশ বর্ণনা করে;
+ * MSW mock ও UI দুটোই এই আকারই ব্যবহার করে।
+ */
+export interface DocumentUploadRequest {
+  title: string;
+  category: DocumentCategory;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  case_id?: Uuid | null;
+  property_id?: Uuid | null;
+  document_date?: IsoDate | null;
+  description?: string | null;
+  client_visible: boolean;
+}
+
+/** নতুন সংস্করণ — পুরনোটি মুছে না, চেইনে যুক্ত হয় (rule A2-এর মনোভাব)। */
+export interface DocumentVersionRequest {
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  note?: string | null;
+}
+
+/** F-DOC-06 — capability `document.visibility` ছাড়া পাঠানো যাবে না। */
+export interface DocumentVisibilityRequest {
+  client_visible: boolean;
+}
+
+/** Folder sidebar-এর গণনা — প্রতি category-তে কতটি ফাইল। */
+export interface DocumentCategoryCount {
+  category: DocumentCategory;
+  count: number;
+}
+
+/* ── Property & land records (docs/01-scope F-PROP-01…08) ────────────── */
+
+export interface PropertyListItem {
+  id: Uuid;
+  title: string;
+  /** মৌজা — বাংলাদেশে জমি খোঁজার প্রথম চাবি */
+  mouza: string | null;
+  jl_no: string | null;
+  district: string | null;
+  upazila: string | null;
+  land_class: LandClass | null;
+  /** শতক (decimal) — DECIMAL(10,3), string-এ আসে */
+  total_area_decimal: string;
+  /** তালিকায় দেখানোর জন্য সব রেকর্ডের দাগ/খতিয়ান একত্রে */
+  dag_numbers: string[];
+  khatian_numbers: string[];
+  case_count: number;
+  document_count: number;
+}
+
+/** F-PROP-02 — CS/SA/RS/BS একই জমির ভিন্ন জরিপের রেকর্ড, পাশাপাশি রাখা হয়। */
+export interface LandRecordItem {
+  id: Uuid;
+  record_type: LandRecordType;
+  khatian_no: string;
+  dag_no: string;
+  mouza: string | null;
+  jl_no: string | null;
+  area_decimal: string;
+  land_class: LandClass | null;
+  owner_names: string[];
+  note: string | null;
+}
+
+export interface DeedItem {
+  id: Uuid;
+  deed_type: DeedType;
+  deed_no: string;
+  deed_date: IsoDate | null;
+  /** সাব-রেজিস্ট্রি অফিস */
+  registry_office: string | null;
+  grantor: string | null;
+  grantee: string | null;
+  consideration_amount: Money | null;
+  note: string | null;
+}
+
+/** নামজারি — জমির মামলায় সবচেয়ে বেশি জিজ্ঞাসিত অবস্থা। */
+export interface MutationItem {
+  id: Uuid;
+  mutation_case_no: string | null;
+  status: MutationStatus;
+  applied_on: IsoDate | null;
+  decided_on: IsoDate | null;
+  new_khatian_no: string | null;
+  office: string | null;
+  note: string | null;
+}
+
+export interface LandTaxItem {
+  id: Uuid;
+  /** অর্থবছর — `2025-2026` */
+  fiscal_year: string;
+  receipt_no: string | null;
+  paid_on: IsoDate | null;
+  amount: Money;
+  office: string | null;
+}
+
+export interface PropertyDetail extends PropertyListItem {
+  description: string | null;
+  address: string | null;
+  /** চৌহদ্দি — উত্তর/দক্ষিণ/পূর্ব/পশ্চিম, মুক্ত পাঠ্য */
+  boundaries: string | null;
+  land_records: LandRecordItem[];
+  deeds: DeedItem[];
+  mutations: MutationItem[];
+  taxes: LandTaxItem[];
+  cases: CaseListItem[];
+  created_at: IsoDateTime;
+}
+
+export interface PropertyWriteRequest {
+  title: string;
+  mouza?: string | null;
+  jl_no?: string | null;
+  district?: string | null;
+  upazila?: string | null;
+  land_class?: LandClass | null;
+  total_area_decimal: string;
+  address?: string | null;
+  boundaries?: string | null;
+  description?: string | null;
+}
+
+export type LandRecordWriteRequest = Omit<LandRecordItem, 'id'>;
+export type DeedWriteRequest = Omit<DeedItem, 'id'>;
+export type MutationWriteRequest = Omit<MutationItem, 'id'>;
+export type LandTaxWriteRequest = Omit<LandTaxItem, 'id'>;
+
+/** F-PROP-07 — একই জমি একাধিক মামলায় থাকতে পারে (দেওয়ানি + নামজারি আপিল)। */
+export interface PropertyCaseLinkRequest {
+  case_id: Uuid;
+}
+
+/* ── Billing (docs/01-scope F-BILL-01…10) ────────────────────────────── */
+
+/**
+ * টাকার অঙ্ক সব জায়গায় `Money` (DECIMAL string)।
+ *
+ * কোনো হিসাব client-এ চূড়ান্ত হয় না — subtotal, total, বকেয়া সবই server
+ * পাঠায়। UI live total দেখায় ঠিকই, কিন্তু সেটি খসড়া ফর্মের সুবিধা মাত্র;
+ * সংরক্ষণের পরে পর্দায় যা থাকে তা server-এর সংখ্যা। ফি নিয়ে মক্কেলের
+ * সাথে তর্ক হলে দুই পক্ষ যেন একই অঙ্ক দেখে।
+ */
+
+/** F-BILL-01 — মামলা নেওয়ার সময়ের ফি-চুক্তি। */
+export interface FeeAgreementSummary {
+  id: Uuid;
+  case_id: Uuid;
+  fee_type: FeeType;
+  /** FIXED/RETAINER-এ মোট; STAGE_WISE-এ ধাপগুলোর যোগফল */
+  total_amount: Money;
+  /** HOURLY হলে ঘণ্টাপ্রতি হার, নাহলে null */
+  hourly_rate: Money | null;
+  /** STAGE_WISE — কোন ধাপে কত */
+  stages: Array<{ code: string; name: string; amount: Money }>;
+  note: string | null;
+  created_at: IsoDateTime;
+}
+
+export interface FeeAgreementWriteRequest {
+  case_id: Uuid;
+  fee_type: FeeType;
+  total_amount: Money;
+  hourly_rate?: Money | null;
+  stages?: Array<{ code: string; name: string; amount: Money }>;
+  note?: string | null;
+}
+
+export interface InvoiceLineItem {
+  id: Uuid;
+  category: InvoiceLineCategory;
+  description: string;
+  quantity: string;
+  unit_amount: Money;
+  /** quantity × unit_amount — server-এর হিসাব */
+  amount: Money;
+}
+
+export interface InvoiceListItem {
+  id: Uuid;
+  /** `INV-2026-0042` — firm-এর prefix ও ক্রম থেকে (firm settings) */
+  invoice_number: string;
+  case_id: Uuid | null;
+  case_display_number: string | null;
+  client_id: Uuid | null;
+  client_name: string;
+  status: InvoiceStatus;
+  issue_date: IsoDate | null;
+  due_date: IsoDate | null;
+  subtotal: Money;
+  discount: Money;
+  total: Money;
+  paid_amount: Money;
+  /** total − paid_amount; মক্কেলের সাথে কথা বলার সময় এই একটিই সংখ্যা লাগে */
+  due_amount: Money;
+}
+
+export interface InvoiceDetail extends InvoiceListItem {
+  case_title: string | null;
+  client_address: string | null;
+  client_mobile: string | null;
+  note: string | null;
+  terms: string | null;
+  lines: InvoiceLineItem[];
+  payments: PaymentItem[];
+  created_at: IsoDateTime;
+  issued_at: IsoDateTime | null;
+}
+
+export type InvoiceLineWriteRequest = Omit<InvoiceLineItem, 'id' | 'amount'>;
+
+export interface InvoiceWriteRequest {
+  case_id: Uuid | null;
+  client_id: Uuid | null;
+  issue_date?: IsoDate | null;
+  due_date?: IsoDate | null;
+  discount?: Money;
+  note?: string | null;
+  lines: InvoiceLineWriteRequest[];
+}
+
+/**
+ * F-BILL-04 — খসড়া থেকে প্রদত্ত।
+ *
+ * আলাদা endpoint, কারণ এটি অপরিবর্তনীয় ধাপ: issue করার পরে invoice
+ * সম্পাদনা করা যায় না, শুধু বাতিল বা payment যোগ করা যায়।
+ */
+export interface InvoiceIssueResponse {
+  invoice: InvoiceDetail;
+  /** মক্কেলকে জানানো হয়েছে কি না (FE9 — UI নিজে দাবি করে না) */
+  notifications_queued: number;
+}
+
+export interface PaymentItem {
+  id: Uuid;
+  invoice_id: Uuid;
+  invoice_number: string;
+  amount: Money;
+  method: PaymentMethod;
+  paid_on: IsoDate;
+  /** bKash/Nagad TrxID, চেক নম্বর, ব্যাংক slip — মাধ্যম অনুযায়ী */
+  reference: string | null;
+  receipt_no: string;
+  note: string | null;
+  recorded_by_name: string | null;
+  recorded_at: IsoDateTime;
+}
+
+export interface PaymentWriteRequest {
+  amount: Money;
+  method: PaymentMethod;
+  paid_on: IsoDate;
+  reference?: string | null;
+  note?: string | null;
+}
+
+/** F-BILL-07 — মামলার হিসাব: কী চার্জ হয়েছে, কী পরিশোধ হয়েছে, কত বাকি। */
+export interface CaseLedgerEntry {
+  id: Uuid;
+  date: IsoDate;
+  kind: 'INVOICE' | 'PAYMENT';
+  description: string;
+  /** চার্জ (invoice) */
+  debit: Money | null;
+  /** পরিশোধ (payment) */
+  credit: Money | null;
+  /** এই সারির পরে চলতি ব্যালেন্স */
+  balance: Money;
+  invoice_id: Uuid | null;
+  payment_id: Uuid | null;
+}
+
+export interface CaseLedger {
+  case_id: Uuid;
+  case_display_number: string;
+  fee_agreement: FeeAgreementSummary | null;
+  entries: CaseLedgerEntry[];
+  total_billed: Money;
+  total_paid: Money;
+  balance: Money;
+}
+
+/** F-BILL-09 — আর্থিক dashboard (capability `report.financial`)। */
+export interface FinancialSummary {
+  outstanding_total: Money;
+  overdue_total: Money;
+  collected_this_month: Money;
+  billed_this_month: Money;
+  by_status: Array<{ status: InvoiceStatus; count: number; amount: Money }>;
+  /** সাম্প্রতিক মাসগুলো — চার্জ বনাম আদায় */
+  monthly: Array<{ month: string; billed: Money; collected: Money }>;
+  top_debtors: Array<{ client_id: Uuid; client_name: string; amount: Money }>;
+}
+
+/* ── Firm settings (F-BILL-10 / F-FIRM-*) ────────────────────────────── */
+
+/**
+ * Letterhead — invoice ও রসিদের মাথায় যা ছাপা হয়।
+ * Backend আসল PDF তৈরি করবে; এই তথ্যগুলোই তার উৎস।
+ */
+export interface FirmSettings {
+  name: string;
+  name_bn: string | null;
+  address: string | null;
+  mobile: string | null;
+  email: string | null;
+  logo_url: string | null;
+  /** letterhead-এর নিচে ছোট লাইন — bar registration, chamber নম্বর ইত্যাদি */
+  letterhead_note: string | null;
+  invoice_prefix: string;
+  invoice_next_number: number;
+  /** চালানের নিচে ছাপা শর্তাবলি */
+  terms: string | null;
+  default_language: Language;
+}
+
+export type FirmSettingsWriteRequest = Partial<Omit<FirmSettings, 'invoice_next_number'>>;
