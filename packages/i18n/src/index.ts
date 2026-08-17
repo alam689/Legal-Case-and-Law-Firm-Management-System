@@ -45,6 +45,10 @@ export const LOCALE_CHUNKS = [
   'metrics',
   'billing',
   'settings',
+  'staff',
+  'portal',
+  'admin',
+  'appointments',
 ] as const;
 export type LocaleChunk = (typeof LOCALE_CHUNKS)[number];
 
@@ -67,6 +71,10 @@ const LOADERS: Record<Locale, Record<LocaleChunk, () => Promise<Record<string, u
     metrics: () => import('./bn/metrics.js').then((m) => m.bnMetrics),
     billing: () => import('./bn/billing.js').then((m) => m.bnBilling),
     settings: () => import('./bn/settings.js').then((m) => m.bnSettings),
+    staff: () => import('./bn/staff.js').then((m) => m.bnStaff),
+    portal: () => import('./bn/portal.js').then((m) => m.bnPortal),
+    admin: () => import('./bn/admin.js').then((m) => m.bnAdmin),
+    appointments: () => import('./bn/appointments.js').then((m) => m.bnAppointments),
   },
   en: {
     landing: () => import('./en/landing.js').then((m) => m.enLanding),
@@ -80,6 +88,10 @@ const LOADERS: Record<Locale, Record<LocaleChunk, () => Promise<Record<string, u
     metrics: () => import('./en/metrics.js').then((m) => m.enMetrics),
     billing: () => import('./en/billing.js').then((m) => m.enBilling),
     settings: () => import('./en/settings.js').then((m) => m.enSettings),
+    staff: () => import('./en/staff.js').then((m) => m.enStaff),
+    portal: () => import('./en/portal.js').then((m) => m.enPortal),
+    admin: () => import('./en/admin.js').then((m) => m.enAdmin),
+    appointments: () => import('./en/appointments.js').then((m) => m.enAppointments),
   },
 };
 
@@ -111,6 +123,10 @@ export const NAMESPACES = [
   'metrics',
   'billing',
   'settings',
+  'staff',
+  'portal',
+  'admin',
+  'appointments',
   'state',
   'errors',
   'validation',

@@ -1,5 +1,17 @@
 import '@testing-library/jest-dom/vitest';
+import { configure } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll } from 'vitest';
+
+/**
+ * `findBy*`-এর নিজস্ব অপেক্ষা — vitest-এর `testTimeout` নয়।
+ *
+ * Testing Library-র default ১ সেকেন্ড। এখানকার প্রতিটি অপেক্ষার পেছনে
+ * MSW handler + react-query-র fetch চক্র থাকে, আর ২৭টি test file
+ * সমান্তরালে চললে worker গুলো CPU ভাগ করে নেয় — তখন ১ সেকেন্ড অনায়াসে
+ * পেরিয়ে যায়। একা চালালে সব সবুজ, একসাথে চালালে এলোমেলো লাল: সেই
+ * অস্থিরতাই সবচেয়ে ব্যয়বহুল, কারণ তাতে আসল ব্যর্থতাকেও কেউ বিশ্বাস করে না।
+ */
+configure({ asyncUtilTimeout: 5_000 });
 
 import { resetAuthBroadcast } from '@/shared/auth/broadcast';
 import { resetRefreshState } from '@/shared/auth/refresh';
@@ -26,6 +38,9 @@ import {
   resetBillingData,
   resetDedupe,
   resetDocumentData,
+  resetAppointmentData,
+  resetPlatformData,
+  resetStaffData,
   resetHearingData,
   resetMockData,
   resetNotificationData,
@@ -43,6 +58,9 @@ afterEach(() => {
   resetHearingData();
   resetNotificationData();
   resetDocumentData();
+  resetStaffData();
+  resetPlatformData();
+  resetAppointmentData();
   resetPropertyData();
   resetBillingData();
   resetDedupe();

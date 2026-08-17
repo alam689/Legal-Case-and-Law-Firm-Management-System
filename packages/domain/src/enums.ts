@@ -24,8 +24,22 @@ export const FIRM_ROLES = [
 ] as const;
 export type FirmRole = (typeof FIRM_ROLES)[number];
 
-/** MVP-তে শুধু FIRM_ADMIN active; বাকিগুলো Phase 2 (docs/01-scope §5)। */
-export const MVP_FIRM_ROLES: readonly FirmRole[] = ['FIRM_ADMIN'];
+/**
+ * Firm-এ যে role গুলো এখন বসানো যায়।
+ *
+ * শুরুতে শুধু `FIRM_ADMIN` ছিল — matrix encode করা থাকলেও বাকিগুলো বন্ধ।
+ * চেম্বার প্রধান (P3) staff যোগ করতে পারলে তবেই সেগুলোর মানে হয়, আর
+ * সহকারী (P4) নিজের পরিচয়ে ঢুকতে না পারলে "cause list দেখে bulk entry"
+ * বলে কিছুই যাচাই করা যায় না। তাই পাঁচটিই সক্রিয়; প্রকৃত অনুমতি
+ * সবসময়ের মতোই `ROLE_CAPABILITIES` থেকে আসে, role-এর নাম থেকে নয়।
+ */
+export const MVP_FIRM_ROLES: readonly FirmRole[] = [
+  'FIRM_ADMIN',
+  'SENIOR_ADVOCATE',
+  'ASSOCIATE',
+  'JUNIOR',
+  'ASSISTANT',
+];
 
 export const FIRM_TYPES = ['SOLO', 'CHAMBER', 'FIRM', 'CORPORATE_LEGAL'] as const;
 export type FirmType = (typeof FIRM_TYPES)[number];
@@ -227,3 +241,37 @@ export type DeliveryStatus = (typeof DELIVERY_STATUSES)[number];
 
 export const CLIENT_LINK_STATUSES = ['PENDING', 'ACTIVE', 'REVOKED'] as const;
 export type ClientLinkStatus = (typeof CLIENT_LINK_STATUSES)[number];
+
+/* ── Appointment (মক্কেলের সাক্ষাৎ) ──────────────────────────────────── */
+
+/**
+ * মক্কেল সময় **চান**, চেম্বার **দেয়** — তাই `REQUESTED` আর `CONFIRMED`
+ * আলাদা অবস্থা। মক্কেল অনুরোধ করলেই সাক্ষাৎ পাকা হয়ে যায় না; আইনজীবীর
+ * দিনটি আদালতেই কাটে, আর সেই বাস্তবতা UI-তে লুকোনো হয় না।
+ */
+export const APPOINTMENT_STATUSES = [
+  'REQUESTED',
+  'CONFIRMED',
+  'RESCHEDULED',
+  'DECLINED',
+  'CANCELLED',
+  'COMPLETED',
+] as const;
+export type AppointmentStatus = (typeof APPOINTMENT_STATUSES)[number];
+
+export const APPOINTMENT_MODES = ['CHAMBER', 'PHONE', 'VIDEO'] as const;
+export type AppointmentMode = (typeof APPOINTMENT_MODES)[number];
+
+/* ── Platform / tenant (P5) ──────────────────────────────────────────── */
+
+/**
+ * চেম্বারের subscription স্তর।
+ *
+ * SMS বাংলাদেশে এই product-এর সবচেয়ে বড় চলতি খরচ, তাই প্রতিটি স্তরের
+ * সাথে একটি SMS কোটা বাঁধা — plan বদলানো মানে কোটাও বদলানো।
+ */
+export const SUBSCRIPTION_PLANS = ['TRIAL', 'SOLO', 'CHAMBER', 'FIRM'] as const;
+export type SubscriptionPlan = (typeof SUBSCRIPTION_PLANS)[number];
+
+export const TENANT_STATUSES = ['ACTIVE', 'TRIAL', 'PAST_DUE', 'SUSPENDED', 'CANCELLED'] as const;
+export type TenantStatus = (typeof TENANT_STATUSES)[number];

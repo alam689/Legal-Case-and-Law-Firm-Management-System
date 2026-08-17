@@ -6,6 +6,8 @@
  */
 
 import type {
+  AppointmentMode,
+  AppointmentStatus,
   CaseCategory,
   CaseEventType,
   CaseStatus,
@@ -30,6 +32,8 @@ import type {
   PartySide,
   PartyType,
   PaymentMethod,
+  SubscriptionPlan,
+  TenantStatus,
   VerificationStatus,
 } from './enums.js';
 
@@ -353,4 +357,59 @@ export const FIRM_TYPE_LABELS: LabelMap<FirmType> = {
   CHAMBER: { bn: 'চেম্বার', en: 'Chamber' },
   FIRM: { bn: 'ল ফার্ম', en: 'Law firm' },
   CORPORATE_LEGAL: { bn: 'কর্পোরেট লিগ্যাল', en: 'Corporate legal' },
+};
+
+export const SUBSCRIPTION_PLAN_LABELS: LabelMap<SubscriptionPlan> = {
+  TRIAL: { bn: 'ট্রায়াল', en: 'Trial' },
+  SOLO: { bn: 'একক', en: 'Solo' },
+  CHAMBER: { bn: 'চেম্বার', en: 'Chamber' },
+  FIRM: { bn: 'ফার্ম', en: 'Firm' },
+};
+
+export const TENANT_STATUS_LABELS: LabelMap<TenantStatus> = {
+  ACTIVE: { bn: 'সক্রিয়', en: 'Active' },
+  TRIAL: { bn: 'ট্রায়ালে', en: 'On trial' },
+  PAST_DUE: { bn: 'বকেয়া', en: 'Past due' },
+  SUSPENDED: { bn: 'স্থগিত', en: 'Suspended' },
+  CANCELLED: { bn: 'বাতিল', en: 'Cancelled' },
+};
+
+/**
+ * Tenant-এর অবস্থা রঙে — operator একনজরে ঝুঁকি দেখেন।
+ * `PAST_DUE` warning, `SUSPENDED` danger: প্রথমটি এখনো উদ্ধারযোগ্য, দ্বিতীয়টি নয়।
+ */
+export const TENANT_STATUS_TONES: Readonly<Record<TenantStatus, Tone>> = {
+  ACTIVE: 'success',
+  TRIAL: 'info',
+  PAST_DUE: 'warning',
+  SUSPENDED: 'danger',
+  CANCELLED: 'neutral',
+};
+
+export const APPOINTMENT_STATUS_LABELS: LabelMap<AppointmentStatus> = {
+  REQUESTED: { bn: 'অনুরোধ করা হয়েছে', en: 'Requested' },
+  CONFIRMED: { bn: 'নিশ্চিত', en: 'Confirmed' },
+  RESCHEDULED: { bn: 'সময় বদলানো হয়েছে', en: 'Rescheduled' },
+  DECLINED: { bn: 'দেওয়া যায়নি', en: 'Declined' },
+  CANCELLED: { bn: 'বাতিল', en: 'Cancelled' },
+  COMPLETED: { bn: 'সম্পন্ন', en: 'Completed' },
+};
+
+/**
+ * `DECLINED` danger নয়, warning — আইনজীবী সময় দিতে না পারা ব্যর্থতা নয়,
+ * আদালতের দিনে সেটিই স্বাভাবিক। লাল রঙ মক্কেলকে অকারণে উদ্বিগ্ন করত।
+ */
+export const APPOINTMENT_STATUS_TONES: Readonly<Record<AppointmentStatus, Tone>> = {
+  REQUESTED: 'info',
+  CONFIRMED: 'success',
+  RESCHEDULED: 'warning',
+  DECLINED: 'warning',
+  CANCELLED: 'neutral',
+  COMPLETED: 'neutral',
+};
+
+export const APPOINTMENT_MODE_LABELS: LabelMap<AppointmentMode> = {
+  CHAMBER: { bn: 'চেম্বারে সরাসরি', en: 'At the chamber' },
+  PHONE: { bn: 'ফোনে', en: 'Over the phone' },
+  VIDEO: { bn: 'ভিডিও কলে', en: 'Video call' },
 };

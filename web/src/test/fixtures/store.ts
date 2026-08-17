@@ -152,6 +152,7 @@ function seedCases(): CaseRecord[] {
       internal_notes: 'প্রতিপক্ষের দলিলের সইয়ে সন্দেহ — হস্তলিপি বিশেষজ্ঞের মতামত নেওয়া হবে।',
       opened_at: '2024-02-11T06:00:00Z',
       closed_at: null,
+      assigned_lawyer_id: 'staff-1',
       assigned_lawyer_name: 'মোঃ খোরশেদ আলম',
       parties: [
         {
@@ -201,7 +202,8 @@ function seedCases(): CaseRecord[] {
       internal_notes: null,
       opened_at: '2023-07-30T06:00:00Z',
       closed_at: null,
-      assigned_lawyer_name: 'মোঃ খোরশেদ আলম',
+      assigned_lawyer_id: 'staff-2',
+      assigned_lawyer_name: 'নুসরাত জাহান',
       parties: [],
     },
     {
@@ -227,7 +229,9 @@ function seedCases(): CaseRecord[] {
       internal_notes: null,
       opened_at: '2025-01-18T06:00:00Z',
       closed_at: null,
-      assigned_lawyer_name: 'মোঃ খোরশেদ আলম',
+      // ইচ্ছাকৃতভাবে কারও নামে নয় — চেম্বার প্রধানের সতর্কতাটি দেখা যায়
+      assigned_lawyer_id: null,
+      assigned_lawyer_name: null,
       parties: [],
     },
   ];
@@ -239,6 +243,19 @@ function seedCases(): CaseRecord[] {
  * প্রকৃত pilot chamber-এ ১৫০–৪০০ মামলা স্বাভাবিক (docs/01-scope §1)।
  */
 const BULK_CASE_COUNT = 497;
+
+/**
+ * Bulk মামলাগুলো চেম্বারের সদস্যদের মধ্যে ভাগ করা — নাহলে "কার হাতে কত"
+ * পর্দাটি ৫০০ মামলার firm-এও একজনের নামে সব দেখাত, আর ভারসাম্যের
+ * প্রশ্নটাই অর্থহীন হয়ে যেত। প্রতি পঞ্চম মামলা কারও নামে নেই।
+ */
+const BULK_ASSIGNEES: ReadonlyArray<{ id: string; name: string } | null> = [
+  { id: 'staff-1', name: 'মোঃ খোরশেদ আলম' },
+  { id: 'staff-2', name: 'নুসরাত জাহান' },
+  { id: 'staff-4', name: 'তানভীর হাসান' },
+  { id: 'staff-2', name: 'নুসরাত জাহান' },
+  null,
+];
 
 function seedBulkCases(): CaseRecord[] {
   const categories: Array<CaseRecord['case_category']> = [
@@ -290,7 +307,8 @@ function seedBulkCases(): CaseRecord[] {
       internal_notes: null,
       opened_at: `${year}-01-01T06:00:00Z`,
       closed_at: null,
-      assigned_lawyer_name: 'মোঃ খোরশেদ আলম',
+      assigned_lawyer_id: BULK_ASSIGNEES[index % BULK_ASSIGNEES.length]?.id ?? null,
+      assigned_lawyer_name: BULK_ASSIGNEES[index % BULK_ASSIGNEES.length]?.name ?? null,
       parties: [],
     } satisfies CaseRecord;
   });
@@ -449,6 +467,8 @@ function getCaseListItem(id: string): CaseListItem | undefined {
     last_hearing: null,
     client_names: record.client_names,
     amount_due: record.amount_due,
+    assigned_lawyer_id: record.assigned_lawyer_id,
+    assigned_lawyer_name: record.assigned_lawyer_name,
   };
 }
 
@@ -457,6 +477,8 @@ export interface CaseListFilters {
   status?: string;
   category?: string;
   courtId?: string;
+  /** P3 — কার হাতে; `'none'` মানে কারও হাতে নেই এমনগুলো */
+  assignedTo?: string;
 }
 
 export interface PagedCases {
@@ -486,6 +508,11 @@ export function listCases(filters: CaseListFilters = {}): CaseListItem[] {
       if (filters.status && record.status !== filters.status) return false;
       if (filters.category && record.case_category !== filters.category) return false;
       if (filters.courtId && record.court?.id !== filters.courtId) return false;
+      if (filters.assignedTo === 'none') {
+        if (record.assigned_lawyer_id !== null) return false;
+      } else if (filters.assignedTo && record.assigned_lawyer_id !== filters.assignedTo) {
+        return false;
+      }
       if (!query) return true;
       return [record.display_number, record.title, ...record.client_names]
         .join(' ')
@@ -537,6 +564,7 @@ export function createCase(body: CaseWriteRequest): CaseDetail {
     internal_notes: body.internal_notes ?? null,
     opened_at: '2026-08-17T06:00:00Z',
     closed_at: null,
+    assigned_lawyer_id: 'staff-1',
     assigned_lawyer_name: 'মোঃ খোরশেদ আলম',
     parties: [],
   };
@@ -571,4 +599,57 @@ export function updateCase(id: string, patch: Partial<CaseWriteRequest>): CaseDe
     ...(patch.subject_matter !== undefined ? { subject_matter: patch.subject_matter } : {}),
   };
   return getCase(id);
+}
+
+/** P3 — মামলা অন্য সদস্যের নামে বসানো। */
+export function reassignCase(
+  caseId: string,
+  lawyer: { id: string; name: string } | null,
+): CaseDetail | undefined {
+  const index = cases.findIndex((item) => item.id === caseId);
+  const existing = cases[index];
+  if (!existing) return undefined;
+
+  cases[index] = {
+    ...existing,
+    assigned_lawyer_id: lawyer?.id ?? null,
+    assigned_lawyer_name: lawyer?.name ?? null,
+  };
+  return getCase(caseId);
+}
+
+/** কোন সদস্যের নামে কতগুলো চলমান মামলা ও কত বকেয়া (staff fixture ব্যবহার করে)। */
+export function caseLoadByLawyer(): Map<string, { cases: number; due: number }> {
+  const load = new Map<string, { cases: number; due: number }>();
+  for (const record of cases) {
+    if (record.status === 'DISPOSED' || record.status === 'CLOSED') continue;
+    const key = record.assigned_lawyer_id ?? '__none__';
+    const entry = load.get(key) ?? { cases: 0, due: 0 };
+    entry.cases += 1;
+    entry.due += Number(record.amount_due) || 0;
+    load.set(key, entry);
+  }
+  return load;
+}
+
+export function unassignedCaseCount(): number {
+  return cases.filter(
+    (record) =>
+      record.assigned_lawyer_id === null &&
+      record.status !== 'DISPOSED' &&
+      record.status !== 'CLOSED',
+  ).length;
+}
+
+export function activeCaseCount(): number {
+  return cases.filter((record) => record.status !== 'DISPOSED' && record.status !== 'CLOSED')
+    .length;
+}
+
+/** Portal — শুধু এই মক্কেলের মামলা (P1)। */
+export function casesForClient(clientId: string): CaseListItem[] {
+  return cases
+    .filter((record) => record.client_ids.includes(clientId))
+    .map((record) => getCaseListItem(record.id))
+    .filter(Boolean) as CaseListItem[];
 }

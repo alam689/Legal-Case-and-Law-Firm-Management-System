@@ -2,6 +2,7 @@ import { FIRM_ROLE_LABELS, label } from '@caseflow/domain';
 import {
   Activity,
   BellRing,
+  CalendarCheck,
   CalendarDays,
   FileText,
   Gavel,
@@ -12,6 +13,7 @@ import {
   Receipt,
   Scale,
   Users,
+  UsersRound,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -43,6 +45,7 @@ const NAV_SECTIONS: Array<{ titleKey: string; items: NavItem[] }> = [
       { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard },
       { to: '/diary', labelKey: 'nav.diary', icon: NotebookPen },
       { to: '/calendar', labelKey: 'nav.calendar', icon: CalendarDays },
+      { to: '/appointments', labelKey: 'nav.appointments', icon: CalendarCheck },
       { to: '/cases', labelKey: 'nav.cases', icon: Gavel },
     ],
   },
@@ -50,6 +53,7 @@ const NAV_SECTIONS: Array<{ titleKey: string; items: NavItem[] }> = [
     titleKey: 'nav.sectionPractice',
     items: [
       { to: '/clients', labelKey: 'nav.clients', icon: Users },
+      { to: '/staff', labelKey: 'nav.staff', icon: UsersRound },
       { to: '/documents', labelKey: 'nav.documents', icon: FileText },
       { to: '/properties', labelKey: 'nav.properties', icon: MapPinned },
       { to: '/billing/invoices', labelKey: 'nav.billing', icon: Receipt },

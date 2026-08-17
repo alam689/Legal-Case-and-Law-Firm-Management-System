@@ -324,6 +324,51 @@ export type PaymentWriteInput = z.input<typeof paymentWriteSchema>;
 export type FeeAgreementInput = z.input<typeof feeAgreementSchema>;
 export type FirmSettingsInput = z.input<typeof firmSettingsSchema>;
 
+/* ── P3/P5 — staff ও tenant ──────────────────────────────────────────── */
+
+/** F-FIRM-02 — চেম্বারে সদস্য যোগ। মোবাইল নম্বরই পরিচয়, তাই সেটিই বাধ্যতামূলক। */
+export const staffInviteSchema = z.object({
+  full_name: z.string().trim().min(2, 'validation.name.tooShort').max(150),
+  full_name_bn: z.string().trim().max(150).optional().or(z.literal('')),
+  mobile: bdMobileSchema,
+  email: z.string().trim().email('validation.email.invalid').optional().or(z.literal('')),
+  role: z.string().trim().min(1, 'validation.required'),
+});
+
+/** P5 — নতুন চেম্বার onboarding। */
+export const tenantCreateSchema = z.object({
+  name: z.string().trim().min(2, 'validation.name.tooShort').max(150),
+  name_bn: z.string().trim().max(150).optional().or(z.literal('')),
+  firm_type: z.string().trim().min(1, 'validation.required'),
+  district: z.string().trim().max(80).optional().or(z.literal('')),
+  owner_name: z.string().trim().min(2, 'validation.name.tooShort').max(150),
+  owner_mobile: bdMobileSchema,
+  email: z.string().trim().email('validation.email.invalid').optional().or(z.literal('')),
+  plan: z.string().trim().min(1, 'validation.required'),
+});
+
+/** মক্কেলের সাক্ষাতের অনুরোধ (P1)। */
+export const appointmentRequestSchema = z.object({
+  requested_date: isoDateSchema,
+  requested_time: z.string().trim().max(20).optional().or(z.literal('')),
+  mode: z.string().trim().min(1, 'validation.required'),
+  /** কারণ বাধ্যতামূলক — চেম্বার প্রস্তুত হয়ে বসতে পারে, আর সময়ও কম লাগে */
+  reason: z.string().trim().min(3, 'validation.appointment.reasonRequired').max(500),
+  case_id: z.string().trim().optional().or(z.literal('')),
+});
+
+export const appointmentDecisionSchema = z.object({
+  confirmed_date: isoDateSchema.optional().or(z.literal('')),
+  confirmed_time: z.string().trim().max(20).optional().or(z.literal('')),
+  response_note: z.string().trim().max(500).optional().or(z.literal('')),
+});
+
+export type AppointmentRequestInput = z.input<typeof appointmentRequestSchema>;
+export type AppointmentDecisionInput = z.input<typeof appointmentDecisionSchema>;
+
+export type StaffInviteInput = z.input<typeof staffInviteSchema>;
+export type TenantCreateInput = z.input<typeof tenantCreateSchema>;
+
 export type DocumentUploadInput = z.input<typeof documentUploadSchema>;
 export type PropertyWriteInput = z.input<typeof propertyWriteSchema>;
 export type LandRecordWriteInput = z.input<typeof landRecordWriteSchema>;

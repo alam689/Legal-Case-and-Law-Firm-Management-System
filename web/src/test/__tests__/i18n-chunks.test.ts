@@ -33,6 +33,12 @@ const ALLOWED: Record<string, readonly LocaleChunk[]> = {
   'features/metrics': ['metrics'],
   'features/billing': ['billing', 'cases', 'clients', 'settings'],
   'features/settings': ['settings'],
+  'features/staff': ['staff'],
+  // সাক্ষাৎ দুই দিকেই — চেম্বারের পাতা ও portal-এর পাতা এক feature-এ
+  'features/appointments': ['appointments', 'portal'],
+  // Portal ও admin নিজেদের খোলস (shell) নিজেরাই বহন করে
+  'features/portal': ['portal'],
+  'features/admin': ['admin'],
   // App shell ও shared/ প্রতিটি route-এ render হয় — শুধু core ছোঁয়া যাবে
   app: [],
   shared: [],
@@ -54,6 +60,69 @@ function stripComments(source: string): string {
 function namespacesUsed(source: string): string[] {
   const matches = stripComments(source).matchAll(/\bt\(\s*'([A-Za-z0-9]+)\./g);
   return [...new Set([...matches].map((match) => match[1] as string))];
+}
+
+/**
+ * Import specifier → `sources`-এর key।
+ *
+ * Feature-এর chunk হিসাব করতে গোটা feature ধরে নিলে অতিরিক্ত কড়া হয়ে যায়
+ * (একটি tab-এর জন্য পুরো feature-এর সব chunk চাওয়া), তাই আসল import
+ * graph ধরেই হাঁটা হয়।
+ */
+function resolveModule(specifier: string, fromFile: string): string | null {
+  let base: string;
+  if (specifier.startsWith('@/')) {
+    base = `/src/${specifier.slice(2)}`;
+  } else if (specifier.startsWith('.')) {
+    const dir = fromFile.slice(0, fromFile.lastIndexOf('/'));
+    const parts = `${dir}/${specifier}`.split('/');
+    const stack: string[] = [];
+    for (const part of parts) {
+      if (part === '.' || part === '') continue;
+      if (part === '..') stack.pop();
+      else stack.push(part);
+    }
+    base = `/${stack.join('/')}`;
+  } else {
+    // node_modules বা workspace package — এখানে scan করার কিছু নেই
+    return null;
+  }
+
+  for (const candidate of [`${base}.tsx`, `${base}.ts`, `${base}/index.tsx`, `${base}/index.ts`]) {
+    if (candidate in sources) return candidate;
+  }
+  return null;
+}
+
+/** একটি file থেকে transitively পৌঁছানো সব namespace, কোথায় ব্যবহৃত তা সহ। */
+function namespacesReachableFrom(entry: string): Array<[string, string]> {
+  const seen = new Set<string>([entry]);
+  const queue = [entry];
+  const found: Array<[string, string]> = [];
+
+  while (queue.length > 0) {
+    const file = queue.shift() as string;
+    const source = sources[file];
+    if (!source) continue;
+
+    for (const ns of namespacesUsed(source)) found.push([ns, file]);
+
+    // static `from '…'` ও dynamic `import('…')` দুটোই
+    const specifiers = [
+      ...[...source.matchAll(/from\s+'([^']+)'/g)].map((match) => match[1] as string),
+      ...[...source.matchAll(/import\(\s*'([^']+)'\s*\)/g)].map((match) => match[1] as string),
+    ];
+
+    for (const specifier of specifiers) {
+      const resolved = resolveModule(specifier, file);
+      if (resolved && !seen.has(resolved)) {
+        seen.add(resolved);
+        queue.push(resolved);
+      }
+    }
+  }
+
+  return found;
 }
 
 /** `/src/features/documents/pages/X.tsx` → `features/documents` */
@@ -95,6 +164,73 @@ describe('lazy locale chunk-এর সীমা', () => {
       for (const ns of namespacesUsed(source)) {
         if (!allowed.has(ns)) {
           violations.push(`${file}: "${ns}" — এই route সেই chunk load করে না`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  /**
+   * উপরের জালটির একটি ফাঁক ছিল, আর সেটি production-এ ধরা পড়েছে।
+   *
+   * `app/pages/*Route.tsx` অন্য feature-এর component inject করে (§4)।
+   * ফাইল-ভিত্তিক যাচাইয়ে সেটি বৈধ — component-টি নিজের feature-এই আছে,
+   * আর সেই feature তার chunk ঘোষণা করেছে। কিন্তু **route** যদি সেই
+   * chunk load না করে, runtime-এ কাঁচা key ফোটে।
+   *
+   * ঠিক এভাবেই ড্যাশবোর্ডে `hearing.entry.open` দেখা গিয়েছিল:
+   * `DashboardRoute` `features/hearings`-এর বোতাম বসায়, অথচ route-টি
+   * শুধু `dashboard` chunk আনত।
+   *
+   * তাই এখানে route-এর গঠন দেখা হয়: যে Route file যে feature ছোঁয়,
+   * সেই feature-এর chunk গুলো `routes.tsx`-এ ঘোষিত থাকতেই হবে।
+   */
+  it('প্রতিটি Route file যেসব feature inject করে, তাদের chunk-ও ঘোষিত', async () => {
+    const routesSource = sources['/src/app/routes.tsx'];
+    expect(routesSource, 'routes.tsx পড়া যায়নি').toBeTruthy();
+
+    const chunkNamespaces = new Map<LocaleChunk, string[]>();
+    for (const chunk of LOCALE_CHUNKS) {
+      chunkNamespaces.set(chunk, Object.keys(await loadLocaleChunk('bn', chunk)));
+    }
+
+    // `const NAME = ['a', 'b'] as const;` → NAME: ['a','b']
+    const constants = new Map<string, string[]>();
+    for (const match of (routesSource as string).matchAll(
+      /const\s+([A-Z_]+)\s*=\s*\[([^\]]*)\]\s*as const;/g,
+    )) {
+      constants.set(
+        match[1] as string,
+        [...(match[2] as string).matchAll(/'([a-z]+)'/g)].map((entry) => entry[1] as string),
+      );
+    }
+
+    const violations: string[] = [];
+
+    for (const file of Object.keys(sources)) {
+      const routeName = /^\/src\/app\/pages\/(\w+Route)\.tsx$/.exec(file)?.[1];
+      if (!routeName) continue;
+
+      // routes.tsx-এ এই Route-এর entry ও তার chunk argument
+      const entry = new RegExp(
+        `import\\('\\./pages/${routeName}'\\)(?:,\\s*(\\[[^\\]]*\\]|[A-Z_]+|'[a-z]+'))?`,
+      ).exec(routesSource as string);
+      expect(entry, `${routeName} routes.tsx-এ পাওয়া যায়নি`).toBeTruthy();
+
+      const argument = entry?.[1] ?? '';
+      const declaredChunks =
+        constants.get(argument) ??
+        [...argument.matchAll(/'([a-z]+)'/g)].map((match) => match[1] as string);
+
+      const available = new Set([
+        ...CORE_NAMESPACES,
+        ...declaredChunks.flatMap((chunk) => chunkNamespaces.get(chunk as LocaleChunk) ?? []),
+      ]);
+
+      for (const [ns, from] of namespacesReachableFrom(file)) {
+        if (!available.has(ns)) {
+          violations.push(`${routeName}: "${ns}" লাগে (${from}), কিন্তু সেই chunk আনা হয় না`);
         }
       }
     }

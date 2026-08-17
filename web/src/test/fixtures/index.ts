@@ -1,54 +1,12 @@
-import type {
-  AgendaItem,
-  DashboardSummary,
-  FirmSummary,
-  MeResponse,
-  TokenPair,
-} from '@caseflow/api-types';
-import { capabilitiesForRole } from '@caseflow/domain';
+import type { AgendaItem, DashboardSummary } from '@caseflow/api-types';
 
 /**
  * Fixture-এ **বাংলা নাম ও দীর্ঘ string** ব্যবহার করা হয়, `Test User` নয় —
  * layout bug (Bangla string ২০–৪০% চওড়া) আগে ধরা পড়ে (docs/05-frontend-plan.md §11)।
+ *
+ * Firm, আইনজীবী ও বাকি persona-র fixture [`personas.ts`](./personas.ts)-এ;
+ * নিচে সেগুলো re-export করা হয় বলে import path অপরিবর্তিত থাকে।
  */
-
-export const firmFixture: FirmSummary = {
-  id: '9f1c1e2a-0000-4000-8000-000000000001',
-  name: 'Alam & Associates',
-  name_bn: 'আলম অ্যান্ড অ্যাসোসিয়েটস',
-  slug: 'alam-associates',
-  firm_type: 'CHAMBER',
-  logo_url: null,
-  default_language: 'BN',
-  sms_quota_monthly: 2000,
-  sms_used_current_period: 317,
-};
-
-export const lawyerFixture: MeResponse = {
-  id: '9f1c1e2a-0000-4000-8000-000000000002',
-  mobile: '01712345678',
-  email: 'advocate@example.com',
-  full_name: 'Md Khorshed Alam',
-  full_name_bn: 'মোঃ খোরশেদ আলম',
-  user_type: 'LAWYER',
-  preferred_language: 'BN',
-  firm: firmFixture,
-  role: 'FIRM_ADMIN',
-  capabilities: capabilitiesForRole('FIRM_ADMIN'),
-  lawyer_profile: {
-    bar_enrollment_no: 'D-12345',
-    enrollment_level: 'DISTRICT_COURT',
-    // F-AUTH-04 — MVP-তে অধিকাংশ lawyer এই অবস্থাতেই থাকবেন
-    verification_status: 'SELF_DECLARED',
-    years_of_practice: 12,
-    photo_url: null,
-  },
-};
-
-export const tokenFixture: TokenPair = {
-  access: 'access-token-fixture',
-  expires_in: 900,
-};
 
 export const agendaFixture: AgendaItem[] = [
   {
@@ -128,6 +86,11 @@ export const emptyDashboardFixture: DashboardSummary = {
   alerts: [],
 };
 
+export * from './personas';
+export * from './appointments';
+export * from './staff';
+export * from './portal';
+export * from './platform';
 export * from './reference';
 export * from './store';
 export * from './hearings';

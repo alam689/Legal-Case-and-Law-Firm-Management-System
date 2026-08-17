@@ -12,6 +12,8 @@
  */
 
 import type {
+  AppointmentMode,
+  AppointmentStatus,
   CaseCategory,
   CaseEventType,
   CaseStatus,
@@ -35,6 +37,8 @@ import type {
   PartySide,
   PartyType,
   PaymentMethod,
+  SubscriptionPlan,
+  TenantStatus,
   UserType,
   VerificationStatus,
 } from '@caseflow/domain';
@@ -176,6 +180,14 @@ export interface CaseListItem {
   last_hearing: HearingSummary | null;
   client_names: string[];
   amount_due: Money;
+  /**
+   * কার হাতে মামলাটি (P3)।
+   *
+   * তালিকাতেই রাখা, কারণ চেম্বার প্রধানের প্রথম প্রশ্ন "কার মামলা" — আর
+   * `null` মানে কারও নয়, যেটি নিজেই একটি সতর্কতা।
+   */
+  assigned_lawyer_id: Uuid | null;
+  assigned_lawyer_name: string | null;
 }
 
 export interface CaseDetail extends CaseListItem {
@@ -193,7 +205,7 @@ export interface CaseDetail extends CaseListItem {
   closed_at: IsoDateTime | null;
   parties: CasePartyItem[];
   clients: ClientListItem[];
-  assigned_lawyer_name: string | null;
+  // `assigned_lawyer_id` ও `assigned_lawyer_name` CaseListItem-এ আছে
 }
 
 export interface CaseEventItem {
@@ -904,3 +916,284 @@ export interface FirmSettings {
 }
 
 export type FirmSettingsWriteRequest = Partial<Omit<FirmSettings, 'invoice_next_number'>>;
+
+/* ── Staff & firm portfolio (P3 — চেম্বার প্রধান) ────────────────────── */
+
+/**
+ * চেম্বারের সদস্য।
+ *
+ * `active_case_count` ও `hearings_this_week` ইচ্ছাকৃতভাবে তালিকাতেই আছে —
+ * চেম্বার প্রধানের আসল প্রশ্ন "কে আছে" নয়, "কার উপরে কত চাপ"। আলাদা
+ * পর্দায় গিয়ে দেখতে হলে সেই প্রশ্নের উত্তর কেউ খোঁজেই না।
+ */
+export interface StaffMember {
+  id: Uuid;
+  full_name: string;
+  full_name_bn: string | null;
+  mobile: string;
+  email: string | null;
+  role: FirmRole;
+  is_active: boolean;
+  bar_enrollment_no: string | null;
+  joined_at: IsoDateTime;
+  last_active_at: IsoDateTime | null;
+  active_case_count: number;
+  hearings_this_week: number;
+  /** এই সদস্যের মামলাগুলোর মোট বকেয়া */
+  outstanding_amount: Money;
+}
+
+export interface StaffInviteRequest {
+  full_name: string;
+  full_name_bn?: string | null;
+  mobile: string;
+  email?: string | null;
+  role: FirmRole;
+}
+
+export interface StaffRoleUpdateRequest {
+  role: FirmRole;
+}
+
+export interface StaffActiveUpdateRequest {
+  is_active: boolean;
+}
+
+/** F-FIRM-03 — কার হাতে কত কাজ, আর কোন মামলা কারও হাতে নেই। */
+export interface FirmWorkload {
+  members: StaffMember[];
+  /** কারও নামে বসানো হয়নি এমন মামলা — চুপচাপ হারিয়ে যাওয়ার প্রধান পথ */
+  unassigned_case_count: number;
+  total_active_cases: number;
+}
+
+/* ── Client portal (P1 — মক্কেল) ─────────────────────────────────────── */
+
+/**
+ * ⚠ Rule A4 — portal-এর প্রতিটি response **শুধু** সেই তথ্য বহন করে যা
+ * আইনজীবী সচেতনভাবে দৃশ্যমান করেছেন।
+ *
+ * তাই এগুলো চেম্বারের type-এর `Partial` নয়, সম্পূর্ণ আলাদা আকার:
+ * `Partial` হলে কোনো দিন একটি নতুন ঘর যোগ করলেই সেটি নীরবে মক্কেলের
+ * পর্দায় চলে যেত। এখানে যা নেই তা কখনো পাঠানো হয় না — `internal_notes`
+ * বা প্রতিপক্ষের কৌশল এই আকারে ঢোকানোর জায়গাই নেই।
+ */
+export interface PortalHearing {
+  hearing_id: Uuid;
+  case_id: Uuid;
+  case_display_number: string;
+  case_title: string;
+  date: IsoDate;
+  time: string | null;
+  court_name: string | null;
+  purpose: string | null;
+  /** A1 — মক্কেলকেও তারিখের উৎস জানানো হয়, "নিশ্চিত" বলে চালানো হয় না */
+  source: DateSource;
+  attendance_required: boolean;
+}
+
+/** Portal-এর প্রথম পর্দা — "আমার পরের তারিখ কবে?" এক নজরে। */
+export interface PortalOverview {
+  client_name: string;
+  firm_name: string;
+  firm_name_bn: string | null;
+  /** "উকিলকে ফোন করব?" — নম্বরটি হাতের কাছেই থাকে */
+  firm_mobile: string | null;
+  lawyer_name: string | null;
+  next_hearing: PortalHearing | null;
+  active_case_count: number;
+  outstanding_amount: Money;
+  unread_notice_count: number;
+}
+
+export interface PortalCaseItem {
+  id: Uuid;
+  display_number: string;
+  title: string;
+  court_name: string | null;
+  status: CaseStatus;
+  /** পর্যায়ের অনূদিত নাম — মক্কেলকে কখনো `PLAINTIFF_EVIDENCE` দেখানো হয় না */
+  stage_label: string | null;
+  our_side: PartySide;
+  filing_date: IsoDate | null;
+  next_hearing: PortalHearing | null;
+  last_update: IsoDate | null;
+  lawyer_name: string | null;
+}
+
+export interface PortalTimelineEntry {
+  id: Uuid;
+  date: IsoDate;
+  title: string;
+  description: string | null;
+}
+
+export interface PortalDocumentItem {
+  id: Uuid;
+  title: string;
+  category: DocumentCategory;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  uploaded_at: IsoDateTime;
+  case_display_number: string | null;
+  /** স্ক্যান শেষ না হলে `null` — মক্কেলের জন্যও নিয়ম একই */
+  file_url: string | null;
+}
+
+export interface PortalCaseDetail extends PortalCaseItem {
+  /** শুধু `client_visible` ঘটনা (rule A4) */
+  timeline: PortalTimelineEntry[];
+  hearings: PortalHearing[];
+  documents: PortalDocumentItem[];
+}
+
+export interface PortalInvoiceItem {
+  id: Uuid;
+  invoice_number: string;
+  case_display_number: string | null;
+  status: InvoiceStatus;
+  issue_date: IsoDate | null;
+  due_date: IsoDate | null;
+  total: Money;
+  paid_amount: Money;
+  due_amount: Money;
+}
+
+/** মক্কেলের কাছে যা যা পাঠানো হয়েছে — "আমাকে জানানো হয়নি" তর্কের উত্তর। */
+export interface PortalNoticeItem {
+  id: Uuid;
+  sent_at: IsoDateTime;
+  channel: NotificationChannel;
+  body: string;
+  case_display_number: string | null;
+  delivered: boolean;
+}
+
+/* ── Platform admin (P5 — SaaS operator) ─────────────────────────────── */
+
+export interface TenantListItem {
+  id: Uuid;
+  name: string;
+  name_bn: string | null;
+  slug: string;
+  firm_type: FirmType;
+  plan: SubscriptionPlan;
+  status: TenantStatus;
+  district: string | null;
+  owner_name: string;
+  owner_mobile: string;
+  lawyer_count: number;
+  case_count: number;
+  /** মাসিক আবর্তিত আয় */
+  mrr: Money;
+  sms_quota_monthly: number;
+  sms_used_current_period: number;
+  trial_ends_on: IsoDate | null;
+  created_at: IsoDateTime;
+  last_active_at: IsoDateTime | null;
+}
+
+export interface TenantDetail extends TenantListItem {
+  email: string | null;
+  address: string | null;
+  /** সাম্প্রতিক মাসগুলোর ব্যবহার — বৃদ্ধি না স্থবিরতা, সেটিই আসল সংকেত */
+  usage: Array<{
+    month: string;
+    active_cases: number;
+    hearings_recorded: number;
+    sms_segments: number;
+  }>;
+}
+
+export interface TenantStatusUpdateRequest {
+  status: TenantStatus;
+}
+
+export interface TenantPlanUpdateRequest {
+  plan: SubscriptionPlan;
+  /** Plan বদলালে কোটাও বদলায়; operator চাইলে আলাদা মান দিতে পারেন */
+  sms_quota_monthly?: number;
+}
+
+/** নতুন চেম্বার onboarding — P5-এর প্রধান কাজ। */
+export interface TenantCreateRequest {
+  name: string;
+  name_bn?: string | null;
+  firm_type: FirmType;
+  district?: string | null;
+  owner_name: string;
+  owner_mobile: string;
+  email?: string | null;
+  plan: SubscriptionPlan;
+}
+
+export interface PlatformSummary {
+  firm_count: number;
+  active_firm_count: number;
+  trial_count: number;
+  past_due_count: number;
+  suspended_count: number;
+  total_lawyers: number;
+  total_cases: number;
+  mrr_total: Money;
+  /** SMS এই product-এর সবচেয়ে বড় চলতি খরচ — operator-এর প্রধান নজর */
+  sms_segments_this_period: number;
+  sms_cost_this_period: Money;
+  /** কোটার ৮০%+ খরচ করা চেম্বার — আগেই কথা বলা দরকার */
+  firms_near_sms_quota: number;
+  signups: Array<{ month: string; count: number }>;
+}
+
+/* ── Appointment (মক্কেলের সাক্ষাৎ) ──────────────────────────────────── */
+
+/**
+ * মক্কেল সময় চান, চেম্বার দেয়।
+ *
+ * `requested_*` আর `confirmed_*` আলাদা ঘর — চেম্বার প্রায়ই অন্য সময়
+ * প্রস্তাব করে, আর মক্কেল কী চেয়েছিলেন সেটিও থেকে যাওয়া দরকার। একটিই
+ * ঘর রাখলে "আমি তো সকাল চেয়েছিলাম" তর্কের কোনো প্রমাণ থাকত না।
+ */
+export interface AppointmentItem {
+  id: Uuid;
+  client_id: Uuid;
+  client_name: string;
+  client_mobile: string;
+  case_id: Uuid | null;
+  case_display_number: string | null;
+  requested_date: IsoDate;
+  requested_time: string | null;
+  confirmed_date: IsoDate | null;
+  confirmed_time: string | null;
+  mode: AppointmentMode;
+  status: AppointmentStatus;
+  /** মক্কেল কেন দেখা করতে চান — চেম্বার প্রস্তুত হয়ে বসতে পারে */
+  reason: string;
+  /** চেম্বারের উত্তর: বিকল্প সময়ের কারণ, বা কেন দেওয়া গেল না */
+  response_note: string | null;
+  created_at: IsoDateTime;
+  decided_at: IsoDateTime | null;
+  decided_by_name: string | null;
+}
+
+export interface AppointmentRequestRequest {
+  requested_date: IsoDate;
+  requested_time?: string | null;
+  mode: AppointmentMode;
+  reason: string;
+  case_id?: Uuid | null;
+}
+
+/**
+ * চেম্বারের সিদ্ধান্ত।
+ *
+ * `CONFIRMED` দিলে তারিখ/সময় না দিলে মক্কেলের চাওয়াটিই মেনে নেওয়া হয়;
+ * ভিন্ন সময় দিলে অবস্থা `RESCHEDULED` হয়, `CONFIRMED` নয় — মক্কেল যেন
+ * বুঝতে পারেন সময়টি বদলেছে, শুধু সবুজ চিহ্ন দেখে ধরে না নেন।
+ */
+export interface AppointmentDecisionRequest {
+  decision: 'CONFIRM' | 'DECLINE';
+  confirmed_date?: IsoDate | null;
+  confirmed_time?: string | null;
+  response_note?: string | null;
+}

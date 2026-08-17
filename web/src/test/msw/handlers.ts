@@ -1,7 +1,7 @@
 import type { ApiErrorEnvelope } from '@caseflow/api-types';
 import { HttpResponse, http as mswHttp } from 'msw';
 
-import { DEMO_OTP, DEMO_PASSWORD } from '@/shared/config/demo';
+import { DEMO_OTP, DEMO_PASSWORD, demoPersonaFor } from '@/shared/config/demo';
 import { env } from '@/shared/config/env';
 
 import { todayIso as todayInDhaka } from '@/shared/i18n/formatters';
@@ -65,7 +65,34 @@ import {
   getCase,
   getClient,
   importClients,
-  lawyerFixture,
+  type PersonaKey,
+  PERSONA_FIXTURES,
+  DEMO_CLIENT_ID,
+  cancelAppointment,
+  decideAppointment,
+  listAppointments,
+  portalAppointments,
+  requestAppointment,
+  buildFirmWorkload,
+  buildPlatformSummary,
+  createTenant,
+  getTenant,
+  inviteStaff,
+  isLastActiveAdmin,
+  listStaff,
+  listTenants,
+  portalCaseDetail,
+  portalCases,
+  portalDocuments,
+  portalInvoices,
+  portalNotices,
+  portalOverview,
+  reassignCase,
+  setStaffActive,
+  staffNameFor,
+  updateStaffRole,
+  updateTenantPlan,
+  updateTenantStatus,
   listCasesPaged,
   listClients,
   tokenFixture,
@@ -88,15 +115,26 @@ const BD_MOBILE = /^01[3-9]\d{8}$/;
 const base = env.apiBaseUrl.replace(/\/$/, '');
 const url = (path: string) => `${base}${path}`;
 
-/** Mock server-এর session state — refresh cookie-র বিকল্প। */
-let mockSessionActive = false;
+/**
+ * Mock server-এর session state — refresh cookie-র বিকল্প।
+ *
+ * শুধু "লগইন আছে কি না" নয়, **কে** লগইন করেছেন সেটিও মনে রাখতে হয়:
+ * পাঁচটি persona-র `GET /auth/me` আলাদা, আর মক্কেলের portal-এর প্রতিটি
+ * উত্তর তাঁর নিজের রেকর্ডে সীমিত।
+ */
+let mockSessionPersona: PersonaKey | null = null;
 
 export function resetMockSession(): void {
-  mockSessionActive = false;
+  mockSessionPersona = null;
 }
 
-export function activateMockSession(): void {
-  mockSessionActive = true;
+export function activateMockSession(persona: PersonaKey = 'advocate'): void {
+  mockSessionPersona = persona;
+}
+
+/** Test-এ page সরাসরি render হয় (login পেরোয় না), তাই default advocate। */
+function currentPersona(): PersonaKey {
+  return mockSessionPersona ?? 'advocate';
 }
 
 function errorEnvelope(code: string, message: string, status: number) {
@@ -112,7 +150,8 @@ export const handlers = [
     if (!BD_MOBILE.test(body.mobile) || body.password !== DEMO_PASSWORD) {
       return errorEnvelope('invalid_credentials', 'Invalid mobile or password', 401);
     }
-    mockSessionActive = true;
+    // নম্বরই persona ঠিক করে; অচেনা নম্বরে আইনজীবীর পর্দা (demo.ts)
+    mockSessionPersona = demoPersonaFor(body.mobile);
     return HttpResponse.json(tokenFixture);
   }),
 
@@ -123,19 +162,19 @@ export const handlers = [
     if (body.code !== DEMO_OTP) {
       return errorEnvelope('otp_invalid', 'OTP code is invalid or expired', 400);
     }
-    mockSessionActive = true;
+    mockSessionPersona = mockSessionPersona ?? 'advocate';
     return HttpResponse.json(tokenFixture);
   }),
 
   mswHttp.post(url('/auth/refresh'), () => {
-    if (!mockSessionActive) {
+    if (!mockSessionPersona) {
       return errorEnvelope('refresh_invalid', 'No valid refresh token', 401);
     }
     return HttpResponse.json(tokenFixture);
   }),
 
   mswHttp.post(url('/auth/logout'), () => {
-    mockSessionActive = false;
+    mockSessionPersona = null;
     return new HttpResponse(null, { status: 204 });
   }),
 
@@ -143,7 +182,7 @@ export const handlers = [
     if (!request.headers.get('Authorization')) {
       return errorEnvelope('unauthorized', 'Authentication required', 401);
     }
-    return HttpResponse.json(lawyerFixture);
+    return HttpResponse.json(PERSONA_FIXTURES[currentPersona()]);
   }),
 
   mswHttp.get(url('/dashboard/lawyer'), ({ request }) => {
@@ -588,5 +627,187 @@ export const handlers = [
   mswHttp.patch(url('/firm/settings'), async ({ request }) => {
     const body = (await request.json()) as Parameters<typeof updateFirmSettings>[0];
     return HttpResponse.json(updateFirmSettings(body));
+  }),
+  /* ── Staff & firm portfolio (P3) ───────────────────────────────── */
+
+  mswHttp.get(url('/staff'), ({ request }) => {
+    const search = new URL(request.url).searchParams.get('search') ?? undefined;
+    const results = listStaff(search);
+    return HttpResponse.json({ results, next: null, previous: null, count: results.length });
+  }),
+
+  mswHttp.post(url('/staff'), async ({ request }) => {
+    const body = (await request.json()) as Parameters<typeof inviteStaff>[0];
+    if (!body.full_name || !body.mobile) {
+      return errorEnvelope('validation_error', 'Name and mobile are required', 400);
+    }
+    return HttpResponse.json(inviteStaff(body), { status: 201 });
+  }),
+
+  mswHttp.patch(url('/staff/:id/role'), async ({ params, request }) => {
+    const id = String(params.id);
+    const body = (await request.json()) as Parameters<typeof updateStaffRole>[1];
+    /**
+     * শেষ অ্যাডমিনকে নামানো যায় না — server-ই শেষ কথা (FE3)। UI-ও
+     * বোতামটি নিষ্ক্রিয় রাখে, কিন্তু সেটি শুধু সৌজন্য।
+     */
+    if (isLastActiveAdmin(id) && body.role !== 'FIRM_ADMIN') {
+      return errorEnvelope('last_admin', 'At least one firm admin must remain', 409);
+    }
+    const member = updateStaffRole(id, body);
+    return member ? HttpResponse.json(member) : errorEnvelope('not_found', 'Not found', 404);
+  }),
+
+  mswHttp.patch(url('/staff/:id/active'), async ({ params, request }) => {
+    const id = String(params.id);
+    const body = (await request.json()) as { is_active: boolean };
+    if (isLastActiveAdmin(id) && !body.is_active) {
+      return errorEnvelope('last_admin', 'At least one firm admin must remain', 409);
+    }
+    const member = setStaffActive(id, body.is_active);
+    return member ? HttpResponse.json(member) : errorEnvelope('not_found', 'Not found', 404);
+  }),
+
+  mswHttp.get(url('/firm/workload'), () => HttpResponse.json(buildFirmWorkload())),
+
+  mswHttp.patch(url('/cases/:id/assignee'), async ({ params, request }) => {
+    const body = (await request.json()) as { lawyer_id: string | null };
+    const lawyer = body.lawyer_id
+      ? { id: body.lawyer_id, name: staffNameFor(body.lawyer_id) ?? '' }
+      : null;
+    const found = reassignCase(String(params.id), lawyer);
+    return found ? HttpResponse.json(found) : errorEnvelope('not_found', 'Case not found', 404);
+  }),
+
+  /* ── Client portal (P1) ────────────────────────────────────────── */
+
+  /**
+   * প্রতিটি portal endpoint `DEMO_CLIENT_ID`-এ বাঁধা। আসল server-এ এটি
+   * token থেকে আসবে; কোনো অবস্থাতেই client id request-এর parameter হবে না,
+   * নাহলে অন্যের id বসিয়ে অন্যের মামলা পড়া যেত।
+   */
+  mswHttp.get(url('/portal/overview'), () =>
+    HttpResponse.json(portalOverview(DEMO_CLIENT_ID, todayInDhaka())),
+  ),
+
+  mswHttp.get(url('/portal/cases'), () =>
+    HttpResponse.json({
+      results: portalCases(DEMO_CLIENT_ID, todayInDhaka()),
+      next: null,
+      previous: null,
+    }),
+  ),
+
+  mswHttp.get(url('/portal/cases/:id'), ({ params }) => {
+    const found = portalCaseDetail(DEMO_CLIENT_ID, String(params.id), todayInDhaka());
+    return found ? HttpResponse.json(found) : errorEnvelope('not_found', 'Case not found', 404);
+  }),
+
+  mswHttp.get(url('/portal/documents'), () =>
+    HttpResponse.json({
+      results: portalDocuments(DEMO_CLIENT_ID, todayInDhaka()),
+      next: null,
+      previous: null,
+    }),
+  ),
+
+  mswHttp.get(url('/portal/invoices'), () =>
+    HttpResponse.json({
+      results: portalInvoices(DEMO_CLIENT_ID, todayInDhaka()),
+      next: null,
+      previous: null,
+    }),
+  ),
+
+  mswHttp.get(url('/portal/notices'), () =>
+    HttpResponse.json({
+      results: portalNotices(DEMO_CLIENT_ID, todayInDhaka()),
+      next: null,
+      previous: null,
+    }),
+  ),
+
+  /* ── Platform admin (P5) ───────────────────────────────────────── */
+
+  mswHttp.get(url('/platform/summary'), () => HttpResponse.json(buildPlatformSummary())),
+
+  mswHttp.get(url('/platform/firms'), ({ request }) => {
+    const search = new URL(request.url).searchParams.get('search') ?? undefined;
+    const results = listTenants(search);
+    return HttpResponse.json({ results, next: null, previous: null, count: results.length });
+  }),
+
+  mswHttp.post(url('/platform/firms'), async ({ request }) => {
+    const body = (await request.json()) as Parameters<typeof createTenant>[0];
+    if (!body.name || !body.owner_mobile) {
+      return errorEnvelope('validation_error', 'Name and owner mobile are required', 400);
+    }
+    return HttpResponse.json(createTenant(body), { status: 201 });
+  }),
+
+  mswHttp.get(url('/platform/firms/:id'), ({ params }) => {
+    const found = getTenant(String(params.id));
+    return found ? HttpResponse.json(found) : errorEnvelope('not_found', 'Firm not found', 404);
+  }),
+
+  mswHttp.patch(url('/platform/firms/:id/status'), async ({ params, request }) => {
+    const body = (await request.json()) as Parameters<typeof updateTenantStatus>[1];
+    const found = updateTenantStatus(String(params.id), body);
+    return found ? HttpResponse.json(found) : errorEnvelope('not_found', 'Firm not found', 404);
+  }),
+
+  mswHttp.patch(url('/platform/firms/:id/plan'), async ({ params, request }) => {
+    const body = (await request.json()) as Parameters<typeof updateTenantPlan>[1];
+    const found = updateTenantPlan(String(params.id), body);
+    return found ? HttpResponse.json(found) : errorEnvelope('not_found', 'Firm not found', 404);
+  }),
+  /* ── সাক্ষাতের সময় (P1 ↔ চেম্বার) ──────────────────────────────── */
+
+  mswHttp.get(url('/appointments'), ({ request }) => {
+    const status = new URL(request.url).searchParams.get('status') ?? undefined;
+    const results = listAppointments(status);
+    return HttpResponse.json({ results, next: null, previous: null, count: results.length });
+  }),
+
+  mswHttp.patch(url('/appointments/:id/decision'), async ({ params, request }) => {
+    const body = (await request.json()) as Parameters<typeof decideAppointment>[1];
+    const persona = PERSONA_FIXTURES[currentPersona()];
+    const found = decideAppointment(
+      String(params.id),
+      body,
+      persona.full_name_bn ?? persona.full_name,
+    );
+    return found
+      ? HttpResponse.json(found)
+      : errorEnvelope('not_found', 'Appointment not found', 404);
+  }),
+
+  mswHttp.get(url('/portal/appointments'), () =>
+    HttpResponse.json({ results: portalAppointments(DEMO_CLIENT_ID), next: null, previous: null }),
+  ),
+
+  mswHttp.post(url('/portal/appointments'), async ({ request }) => {
+    const body = (await request.json()) as Parameters<typeof requestAppointment>[3];
+    if (!body.requested_date || !body.reason) {
+      return errorEnvelope('validation_error', 'Date and reason are required', 400);
+    }
+    const client = PERSONA_FIXTURES.client;
+    return HttpResponse.json(
+      requestAppointment(
+        DEMO_CLIENT_ID,
+        client.full_name_bn ?? client.full_name,
+        client.mobile,
+        body,
+      ),
+      { status: 201 },
+    );
+  }),
+
+  /** নিজের অপেক্ষমাণ অনুরোধ ছাড়া কিছু বাতিল করা যায় না — server-ই শেষ কথা। */
+  mswHttp.patch(url('/portal/appointments/:id/cancel'), ({ params }) => {
+    const found = cancelAppointment(DEMO_CLIENT_ID, String(params.id));
+    return found
+      ? HttpResponse.json(found)
+      : errorEnvelope('not_found', 'Appointment not found', 404);
   }),
 ];

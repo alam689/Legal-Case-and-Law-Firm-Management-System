@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
 import { useSessionStore } from '@/shared/auth/session.store';
-import { DEMO_OTP, DEMO_PASSWORD } from '@/shared/config/demo';
+import { DEMO_OTP, DEMO_PASSWORD, DEMO_PERSONAS } from '@/shared/config/demo';
 import { lawyerFixture } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
 
@@ -93,6 +93,22 @@ describe('LoginPage', () => {
 
     expect(screen.getByText('ডেমো অ্যাকাউন্ট')).toBeInTheDocument();
     expect(screen.getByText(DEMO_PASSWORD)).toBeInTheDocument();
-    expect(screen.getByText(new RegExp(DEMO_OTP))).toBeInTheDocument();
+    /**
+     * OTP-র অঙ্কগুলো persona-র মোবাইল নম্বরেও থাকে (`01712345678`), তাই
+     * শুধু সংখ্যা খুঁজলে একাধিক মিল পাওয়া যায়। পুরো বাক্যটি মিলিয়ে দেখা হয়।
+     */
+    expect(screen.getByText(`সব ডেমো অ্যাকাউন্টের OTP ${DEMO_OTP}।`)).toBeInTheDocument();
+  });
+
+  /**
+   * পাঁচটি persona-র নম্বর হাতের কাছে না থাকলে backend আসার আগে
+   * "মক্কেল কী দেখেন" যাচাই করার কোনো উপায় থাকে না (docs/01-scope §2)।
+   */
+  it('পাঁচটি persona-র নম্বরই তালিকায় থাকে', () => {
+    renderWithProviders(<LoginPage />);
+
+    for (const persona of DEMO_PERSONAS) {
+      expect(screen.getByText(persona.mobile)).toBeInTheDocument();
+    }
   });
 });

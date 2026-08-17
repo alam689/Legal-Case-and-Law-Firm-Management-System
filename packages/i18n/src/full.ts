@@ -21,6 +21,10 @@ import { bnMetrics } from './bn/metrics.js';
 import { bnNotifications } from './bn/notifications.js';
 import { bnProperties } from './bn/properties.js';
 import { bnSettings } from './bn/settings.js';
+import { bnStaff } from './bn/staff.js';
+import { bnPortal } from './bn/portal.js';
+import { bnAdmin } from './bn/admin.js';
+import { bnAppointments } from './bn/appointments.js';
 
 import { enBilling } from './en/billing.js';
 import { enCases } from './en/cases.js';
@@ -34,6 +38,10 @@ import { enMetrics } from './en/metrics.js';
 import { enNotifications } from './en/notifications.js';
 import { enProperties } from './en/properties.js';
 import { enSettings } from './en/settings.js';
+import { enStaff } from './en/staff.js';
+import { enPortal } from './en/portal.js';
+import { enAdmin } from './en/admin.js';
+import { enAppointments } from './en/appointments.js';
 
 export const bn = {
   ...bnCore,
@@ -48,6 +56,10 @@ export const bn = {
   ...bnMetrics,
   ...bnBilling,
   ...bnSettings,
+  ...bnStaff,
+  ...bnPortal,
+  ...bnAdmin,
+  ...bnAppointments,
 } as const;
 
 export const en = {
@@ -63,6 +75,10 @@ export const en = {
   ...enMetrics,
   ...enBilling,
   ...enSettings,
+  ...enStaff,
+  ...enPortal,
+  ...enAdmin,
+  ...enAppointments,
 };
 
 export type Resources = typeof bn;

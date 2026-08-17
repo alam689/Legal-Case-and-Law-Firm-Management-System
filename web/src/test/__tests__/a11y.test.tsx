@@ -15,6 +15,10 @@ import PropertyDetailPage from '@/features/properties/pages/PropertyDetailPage';
 import PropertyListPage from '@/features/properties/pages/PropertyListPage';
 import FirmSettingsPage from '@/features/settings/pages/FirmSettingsPage';
 import LoginPage from '@/features/auth/pages/LoginPage';
+import AdminOverviewPage from '@/features/admin/pages/AdminOverviewPage';
+import PortalHomePage from '@/features/portal/pages/PortalHomePage';
+import StaffPage from '@/features/staff/pages/StaffPage';
+import { clientUserFixture, platformAdminFixture } from '@/test/fixtures';
 import { findA11yViolations } from '@/test/a11y';
 import { lawyerFixture } from '@/test/fixtures';
 import { renderWithProviders } from '@/test/render';
@@ -178,6 +182,41 @@ describe('a11y — WCAG 2.1 AA (axe)', () => {
     signIn();
     const { container } = renderWithProviders(<FirmSettingsPage />, { route: '/settings' });
     await screen.findByLabelText('চেম্বারের নাম');
+
+    expect(await findA11yViolations(container)).toEqual([]);
+  });
+
+  it('চেম্বারের সদস্য (P3)', async () => {
+    signIn();
+    const { container } = renderWithProviders(<StaffPage />, { route: '/staff' });
+    await waitFor(() => {
+      expect(screen.getAllByRole('row').length).toBeGreaterThan(1);
+    });
+
+    expect(await findA11yViolations(container)).toEqual([]);
+  });
+
+  /** মক্কেলের পর্দা — non-technical ব্যবহারকারী, তাই a11y এখানে বেশি জরুরি। */
+  it('মক্কেলের হোম (P1)', async () => {
+    useSessionStore.setState({
+      status: 'authenticated',
+      user: { ...clientUserFixture, capabilities: [...clientUserFixture.capabilities] },
+      accessToken: 'access-token-fixture',
+    });
+    const { container } = renderWithProviders(<PortalHomePage />, { route: '/portal' });
+    await screen.findByText('আপনার পরবর্তী তারিখ');
+
+    expect(await findA11yViolations(container)).toEqual([]);
+  });
+
+  it('প্ল্যাটফর্ম সারসংক্ষেপ (P5)', async () => {
+    useSessionStore.setState({
+      status: 'authenticated',
+      user: { ...platformAdminFixture, capabilities: [...platformAdminFixture.capabilities] },
+      accessToken: 'access-token-fixture',
+    });
+    const { container } = renderWithProviders(<AdminOverviewPage />, { route: '/admin' });
+    await screen.findByText('মোট চেম্বার');
 
     expect(await findA11yViolations(container)).toEqual([]);
   });

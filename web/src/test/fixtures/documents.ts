@@ -207,6 +207,48 @@ function seedDocuments(): DocumentRecord[] {
         },
       ],
     },
+    {
+      /**
+       * মক্কেল-দৃশ্যমান **এবং** স্ক্যান-অপেক্ষমাণ — দুটো একসাথে।
+       *
+       * এই সংমিশ্রণটিই portal-এর সবচেয়ে সূক্ষ্ম নিয়মটি পরীক্ষা করে:
+       * দেখানোর সিদ্ধান্ত নেওয়া হয়ে গেলেও স্ক্যান শেষ না হওয়া পর্যন্ত
+       * মক্কেল ফাইলটি খুলতে পারবেন না। case-1-এ রাখা, কারণ demo মক্কেল
+       * (client-1) শুধু সেই মামলার সাথেই যুক্ত।
+       */
+      id: 'doc-6',
+      title: 'আদালতের রসিদ — কোর্ট ফি',
+      category: 'COURT_ORDER',
+      file_name: 'court-fee-receipt.pdf',
+      file_size: 88_400,
+      mime_type: 'application/pdf',
+      version: 1,
+      version_count: 1,
+      scan_status: 'PENDING',
+      scan_ticks: SCAN_TICKS,
+      client_visible: true,
+      case_id: 'case-1',
+      property_id: null,
+      document_date: '2026-08-14',
+      description: null,
+      file_url: null,
+      uploaded_at: '2026-08-14T09:30:00Z',
+      uploaded_by_name: UPLOADER,
+      versions: [
+        {
+          ...version(
+            'ver-7',
+            1,
+            'court-fee-receipt.pdf',
+            88_400,
+            'application/pdf',
+            '2026-08-14T09:30:00Z',
+            null,
+          ),
+          scan_status: 'PENDING',
+        },
+      ],
+    },
   ];
 }
 

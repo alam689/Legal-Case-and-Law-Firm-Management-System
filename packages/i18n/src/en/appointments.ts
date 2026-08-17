@@ -1,0 +1,58 @@
+import type { Mirror } from '../mirror.js';
+import type { bnAppointments } from '../bn/appointments.js';
+
+export const enAppointments: Mirror<typeof bnAppointments> = {
+  appointments: {
+    title: 'Appointments',
+    subtitle: 'Times your clients have asked for — grant, move, or let them know.',
+    count: '{{value}} requests',
+    pending: 'Awaiting your reply',
+    pendingHint: 'Without a reply the client is left guessing — saying no is also an answer.',
+    upcoming: 'Upcoming',
+    past: 'Past',
+    empty: {
+      title: 'No requests',
+      body: 'When a client asks for a time from the app, it appears here.',
+    },
+    requestedFor: 'Asked for',
+    confirmedFor: 'Given',
+    reason: 'Reason',
+    responseNote: 'Chamber’s reply',
+    decidedBy: 'Decided by {{name}}',
+    anyTime: 'No particular time',
+    confirm: 'Give a time',
+    confirmTitle: 'Give an appointment time',
+    confirmHint:
+      'Leave the date or time blank to confirm exactly what the client asked for. Give a different time and they will see “rescheduled”.',
+    decline: 'Cannot give a time',
+    declineTitle: 'Cannot give this time',
+    declineHint: 'Write the reason — a bare “no” leaves the client confused.',
+    newDate: 'New date',
+    newTime: 'New time',
+    note: 'What to tell the client',
+    fields: {
+      date: 'Which day',
+      time: 'Preferred time',
+      mode: 'How',
+      reason: 'What do you want to discuss',
+      case: 'About which case',
+      noCase: 'Not about a particular case',
+    },
+    portal: {
+      title: 'Appointments',
+      subtitle: 'Ask for a time if you want to meet your advocate.',
+      request: 'Ask for a time',
+      requestTitle: 'Request an appointment',
+      empty: 'You have not asked for a time yet.',
+      emptyHint: 'Use the button below to ask for one.',
+      submitted: 'Request sent',
+      submittedHint: 'You will get an SMS once the chamber confirms.',
+      cancel: 'Cancel this request',
+      cancelTitle: 'Cancel this request?',
+      cancelBody: 'This request will be cancelled. You can ask for another time later.',
+      pastDateHint: 'Pick today or a later day.',
+      waiting: 'Waiting for the chamber to reply',
+      changedNotice: 'The chamber offered a different time — see below.',
+    },
+  },
+};

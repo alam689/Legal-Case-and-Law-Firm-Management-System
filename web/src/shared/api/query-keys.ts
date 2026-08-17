@@ -88,6 +88,36 @@ export const qk = {
     list: () => ['notifications', 'list'] as const,
     preferences: () => ['notifications', 'preferences'] as const,
   },
+  /**
+   * সাক্ষাতের সময় — চেম্বার ও portal দুই দিকের key একই শাখায়, কারণ
+   * মক্কেল অনুরোধ পাঠালে চেম্বারের তালিকাও বাসি হয়ে যায়।
+   */
+  appointments: {
+    all: () => ['appointments'] as const,
+    list: (status?: string) => ['appointments', 'list', status ?? ''] as const,
+    portal: () => ['appointments', 'portal'] as const,
+  },
+  staff: {
+    all: () => ['staff'] as const,
+    list: (search?: string) => ['staff', 'list', search ?? ''] as const,
+    workload: () => ['staff', 'workload'] as const,
+  },
+  /** মক্কেলের portal (P1) — চেম্বারের key থেকে সম্পূর্ণ আলাদা namespace। */
+  portal: {
+    all: () => ['portal'] as const,
+    overview: () => ['portal', 'overview'] as const,
+    cases: () => ['portal', 'cases'] as const,
+    caseDetail: (id: string) => ['portal', 'cases', id] as const,
+    documents: () => ['portal', 'documents'] as const,
+    invoices: () => ['portal', 'invoices'] as const,
+    notices: () => ['portal', 'notices'] as const,
+  },
+  platform: {
+    all: () => ['platform'] as const,
+    summary: () => ['platform', 'summary'] as const,
+    firms: (search?: string) => ['platform', 'firms', search ?? ''] as const,
+    firmDetail: (id: string) => ['platform', 'firms', 'detail', id] as const,
+  },
   reference: {
     courts: () => ['reference', 'courts'] as const,
     courtTypes: () => ['reference', 'court-types'] as const,

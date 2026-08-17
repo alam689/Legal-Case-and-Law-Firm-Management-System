@@ -1,8 +1,9 @@
-import type { Capability } from '@caseflow/domain';
+import type { Capability, UserType } from '@caseflow/domain';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
 import { ForbiddenState } from '@/shared/ui/ForbiddenState';
 
+import { homePathFor } from './home-path';
 import { useSessionStore } from './session.store';
 import { usePermission } from './use-permission';
 
@@ -24,8 +25,26 @@ export function RequireCapability({ capability }: { capability: Capability }) {
   return allowed ? <Outlet /> : <ForbiddenState />;
 }
 
-/** Login page-এ ইতিমধ্যে logged-in user এলে dashboard-এ পাঠানো হয়। */
+/**
+ * ভুল জগতে ঢুকে পড়া ঠেকায়।
+ *
+ * মক্কেল `/cases` টাইপ করলে 403 নয়, তাঁর নিজের portal-এ পাঠানো হয় —
+ * তিনি কোনো নিষিদ্ধ কাজ করেননি, শুধু ভুল ঠিকানায় গেছেন। 403 দেখানো
+ * হলে মনে হত অ্যাপ তাঁকে সন্দেহ করছে।
+ */
+export function RequireUserType({ allow }: { allow: readonly UserType[] }) {
+  const user = useSessionStore((state) => state.user);
+  if (!user) return <Navigate to="/login" replace />;
+  return allow.includes(user.user_type) ? <Outlet /> : <Navigate to={homePathFor(user.user_type)} replace />;
+}
+
+/** Login page-এ ইতিমধ্যে logged-in user এলে তাঁর নিজের হোমে পাঠানো হয়। */
 export function RedirectIfAuthenticated() {
   const status = useSessionStore((state) => state.status);
-  return status === 'authenticated' ? <Navigate to="/dashboard" replace /> : <Outlet />;
+  const user = useSessionStore((state) => state.user);
+  return status === 'authenticated' ? (
+    <Navigate to={homePathFor(user?.user_type)} replace />
+  ) : (
+    <Outlet />
+  );
 }

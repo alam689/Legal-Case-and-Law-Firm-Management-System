@@ -27,6 +27,24 @@ export const CAPABILITIES = [
   'staff.manage',
   'firm.settings',
   'audit.view',
+  'appointment.manage',
+
+  /**
+   * মক্কেলের portal (P1) — কোনো FirmRole-এর সাথে যুক্ত নয়।
+   *
+   * আলাদা নামস্থান ইচ্ছাকৃত: চেম্বারের `case.view_firm` মানে firm-এর সব
+   * মামলা, আর মক্কেলের `portal.case.view` মানে **শুধু তাঁর নিজের** মামলা,
+   * তাও কেবল যেটুকু দৃশ্যমান করা হয়েছে (rule A4)। একই নাম ব্যবহার করলে
+   * কোনো দিন ভুল করে চেম্বারের পর্দা মক্কেলকে দেখানো হয়ে যেত।
+   */
+  'portal.case.view',
+  'portal.document.view',
+  'portal.invoice.view',
+  'portal.appointment.request',
+
+  /** Platform admin (P5) — tenant, subscription ও ব্যবহারের হিসাব। */
+  'platform.firm.manage',
+  'platform.usage.view',
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
@@ -65,6 +83,7 @@ export const ROLE_CAPABILITIES: RoleCapabilityMap = {
     'staff.manage': 'all',
     'firm.settings': 'all',
     'audit.view': 'all',
+    'appointment.manage': 'all',
   },
   SENIOR_ADVOCATE: {
     'case.view_firm': 'all',
@@ -80,6 +99,7 @@ export const ROLE_CAPABILITIES: RoleCapabilityMap = {
     'payment.record': 'all',
     'report.financial': 'own',
     'message.client': 'all',
+    'appointment.manage': 'all',
   },
   ASSOCIATE: {
     'case.view_firm': 'all',
@@ -95,6 +115,7 @@ export const ROLE_CAPABILITIES: RoleCapabilityMap = {
     'payment.record': 'all',
     'report.financial': 'own',
     'message.client': 'all',
+    'appointment.manage': 'all',
   },
   JUNIOR: {
     'case.view_firm': 'own',
@@ -106,6 +127,7 @@ export const ROLE_CAPABILITIES: RoleCapabilityMap = {
     'document.upload': 'own',
     'document.visibility': 'own',
     'message.client': 'own',
+    'appointment.manage': 'own',
   },
   ASSISTANT: {
     'case.view_firm': 'all',
@@ -113,12 +135,29 @@ export const ROLE_CAPABILITIES: RoleCapabilityMap = {
     'document.upload': 'all',
     'payment.record': 'all',
     'message.client': 'all',
+    'appointment.manage': 'all',
   },
 };
 
 export function capabilitiesForRole(role: FirmRole): Capability[] {
   return Object.keys(ROLE_CAPABILITIES[role]) as Capability[];
 }
+
+/**
+ * মক্কেল ও platform admin-এর capability — `FirmRole`-এর বাইরে, কারণ
+ * তাঁরা কোনো চেম্বারের সদস্য নন। `UserType` থেকেই নির্ধারিত হয়।
+ */
+export const CLIENT_CAPABILITIES: readonly Capability[] = [
+  'portal.case.view',
+  'portal.document.view',
+  'portal.invoice.view',
+  'portal.appointment.request',
+];
+
+export const PLATFORM_ADMIN_CAPABILITIES: readonly Capability[] = [
+  'platform.firm.manage',
+  'platform.usage.view',
+];
 
 export function hasCapability(granted: readonly string[], required: Capability): boolean {
   return granted.includes(required);

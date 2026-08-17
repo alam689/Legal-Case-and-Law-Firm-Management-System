@@ -44,7 +44,9 @@ export const bnCore = {
     dashboard: 'ড্যাশবোর্ড',
     cases: 'মামলা',
     clients: 'মক্কেল',
+    staff: 'চেম্বারের সদস্য',
     calendar: 'ক্যালেন্ডার',
+    appointments: 'সাক্ষাতের সময়',
     diary: 'কোর্ট ডায়েরি',
     documents: 'নথিপত্র',
     properties: 'সম্পত্তি',
@@ -91,6 +93,14 @@ export const bnCore = {
       },
     },
     demo: {
+      personas: {
+        advocate: 'আইনজীবী / চেম্বার প্রধান',
+        associate: 'অ্যাসোসিয়েট আইনজীবী',
+        assistant: 'চেম্বার সহকারী',
+        client: 'মক্কেল',
+        platformAdmin: 'প্ল্যাটফর্ম পরিচালক',
+        note: 'নম্বর বদলে লগইন করলেই ভিন্ন ভূমিকার পর্দা দেখা যায়।',
+      },
       title: 'ডেমো অ্যাকাউন্ট',
       notice: 'Backend এখনো যুক্ত হয়নি — সব তথ্য নমুনা, কিছুই সংরক্ষিত হয় না।',
       mobileLabel: 'মোবাইল',
@@ -163,6 +173,7 @@ export const bnCore = {
       descriptionRequired: 'সারির বিবরণ দিন',
       lineRequired: 'অন্তত একটি সারি যোগ করুন',
     },
+    appointment: { reasonRequired: 'কেন দেখা করতে চান, সংক্ষেপে লিখুন' },
     file: {
       tooLarge: 'ফাইলটি {{size}}-এর চেয়ে বড়',
       unsupported: 'এই ধরনের ফাইল নেওয়া যায় না',

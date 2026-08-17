@@ -42,7 +42,9 @@ export const enCore: Mirror<typeof bnCore> = {
     dashboard: 'Dashboard',
     cases: 'Cases',
     clients: 'Clients',
+    staff: 'Chamber members',
     calendar: 'Calendar',
+    appointments: 'Appointments',
     diary: 'Court diary',
     documents: 'Documents',
     properties: 'Properties',
@@ -90,6 +92,14 @@ export const enCore: Mirror<typeof bnCore> = {
       },
     },
     demo: {
+      personas: {
+        advocate: 'Advocate / chamber head',
+        associate: 'Associate advocate',
+        assistant: 'Chamber assistant',
+        client: 'Client',
+        platformAdmin: 'Platform operator',
+        note: 'Change the number to sign in as a different role.',
+      },
       title: 'Demo account',
       notice: 'The backend is not connected yet — all data is sample data and nothing is saved.',
       mobileLabel: 'Mobile',
@@ -162,6 +172,7 @@ export const enCore: Mirror<typeof bnCore> = {
       descriptionRequired: 'Describe this line',
       lineRequired: 'Add at least one line',
     },
+    appointment: { reasonRequired: 'Briefly say why you want to meet' },
     file: {
       tooLarge: 'File is larger than {{size}}',
       unsupported: 'That file type is not accepted',
