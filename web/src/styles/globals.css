@@ -1,0 +1,129 @@
+/* Self-hosted fonts — কোনো Google Fonts CDN নয় (CSP, docs/05 §15) */
+@import '@fontsource/noto-sans-bengali/400.css';
+@import '@fontsource/noto-sans-bengali/500.css';
+@import '@fontsource/noto-sans-bengali/600.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/600.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: 210 20% 98%;
+    --surface: 0 0% 100%;
+    --surface-muted: 210 20% 96%;
+    --border: 214 20% 88%;
+    --ring: 214 90% 40%;
+
+    /* Contrast ≥ 4.5:1 on --surface (NFR N10) */
+    --fg: 215 28% 14%;
+    --fg-muted: 215 16% 38%;
+    --fg-subtle: 215 14% 46%;
+
+    --primary: 214 84% 32%;
+    --primary-fg: 0 0% 100%;
+    --primary-muted: 214 84% 95%;
+
+    --tone-neutral: 215 16% 38%;
+    --tone-neutral-bg: 215 20% 94%;
+    --tone-info: 214 84% 32%;
+    --tone-info-bg: 214 84% 95%;
+    --tone-success: 152 62% 24%;
+    --tone-success-bg: 152 50% 94%;
+    --tone-warning: 32 90% 26%;
+    --tone-warning-bg: 40 90% 93%;
+    --tone-danger: 0 70% 38%;
+    --tone-danger-bg: 0 80% 96%;
+
+    --radius: 0.5rem;
+  }
+
+  /* রাতের থিম — একই token, ভিন্ন মান। কোনো component বদলাতে হয় না। */
+  .dark {
+    --bg: 215 30% 8%;
+    --surface: 215 28% 11%;
+    --surface-muted: 215 24% 16%;
+    --border: 215 18% 24%;
+    --ring: 205 90% 60%;
+
+    --fg: 210 20% 96%;
+    --fg-muted: 214 14% 74%;
+    --fg-subtle: 214 12% 64%;
+
+    --primary: 205 90% 62%;
+    --primary-fg: 215 40% 10%;
+    --primary-muted: 214 45% 20%;
+
+    --tone-neutral: 214 14% 74%;
+    --tone-neutral-bg: 215 20% 20%;
+    --tone-info: 205 90% 70%;
+    --tone-info-bg: 210 55% 19%;
+    --tone-success: 152 55% 64%;
+    --tone-success-bg: 152 40% 16%;
+    --tone-warning: 40 90% 68%;
+    --tone-warning-bg: 36 50% 17%;
+    --tone-danger: 0 80% 72%;
+    --tone-danger-bg: 0 45% 19%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    /* ব্যবহারকারীর browser font-size respect করা হয় — কখনো px lock নয় (N10) */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-bg text-fg font-sans antialiased;
+  }
+
+  /* Focus সবসময় দৃশ্যমান — keyboard-only flow বাধ্যতামূলক (docs/05 §13) */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-bg;
+  }
+
+  /* Latin numeral/ID পড়া সহজ করতে */
+  .font-latin {
+    font-family: theme('fontFamily.latin');
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Sign-in ও landing hero-এর brand panel — দুই থিমেই ইচ্ছাকৃতভাবে গাঢ় */
+  .brand-gradient {
+    background-image: linear-gradient(
+      155deg,
+      hsl(var(--primary)) 0%,
+      hsl(214 60% 20%) 55%,
+      hsl(215 45% 10%) 100%
+    );
+  }
+
+  .hero-wash {
+    background-image: radial-gradient(
+      120% 90% at 85% 0%,
+      hsl(var(--primary-muted)) 0%,
+      hsl(var(--bg)) 60%
+    );
+  }
+
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50
+      focus:rounded-md focus:bg-surface focus:px-4 focus:py-2 focus:shadow-lg;
+  }
+}

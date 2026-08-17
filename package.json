@@ -1,0 +1,36 @@
+{
+  "name": "caseflow-bd",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "CaseFlow BD — AI-powered legal case & law firm management platform for Bangladesh",
+  "engines": {
+    "node": ">=20.11.0",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "dev": "pnpm --filter @caseflow/web dev",
+    "build": "pnpm --filter @caseflow/web build",
+    "preview": "pnpm --filter @caseflow/web preview",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "size": "pnpm --filter @caseflow/web size",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,json,css}\"",
+    "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm size"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.14.0",
+    "eslint": "^9.14.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.14",
+    "globals": "^15.12.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.13.0"
+  }
+}

@@ -1,0 +1,25 @@
+node_modules/
+dist/
+build/
+coverage/
+.turbo/
+*.tsbuildinfo
+
+# env — কোনো secret repo-তে নয় (docs/05-frontend-plan.md §15)
+.env
+.env.*
+!.env.example
+
+# test / tooling output
+playwright-report/
+test-results/
+.vitest/
+storybook-static/
+stats.html
+
+# editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+pnpm-lock.yaml
+web/public/mockServiceWorker.js
+
+# Planning document গুলো হাতে সাজানো (bilingual table alignment) —
+# prettier সেগুলো পুনর্বিন্যাস করলে diff পড়া অসম্ভব হয়ে যায়।
+*.md

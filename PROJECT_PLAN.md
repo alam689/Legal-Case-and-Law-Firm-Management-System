@@ -411,6 +411,7 @@ Backend ×3, Frontend ×2, Mobile ×2, QA ×1, DevOps ×0.5, PM ×1, Design ×1 
 | [`docs/02-architecture-and-stack.md`](docs/02-architecture-and-stack.md) | System architecture, notification engine, security, integration strategy, API surface |
 | [`docs/03-data-model.md`](docs/03-data-model.md) | Entity definitions, fields, relations, enums, indexing |
 | [`docs/04-delivery-roadmap.md`](docs/04-delivery-roadmap.md) | Sprint-by-sprint MVP backlog, exit criteria, test strategy |
+| [`docs/05-frontend-plan.md`](docs/05-frontend-plan.md) | Lawyer Web (React) — stack ADR seeds, folder structure, route map, core loop UI spec, sprint-aligned FE plan |
 
 ---
 

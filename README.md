@@ -4,8 +4,9 @@
 
 > আইনজীবী hearing শেষে একবার next date entry করবেন → system নিজেই calendar, timeline, client notification, reminder, task ও diary update করবে। Client-কে আর ফোন করে জিজ্ঞাসা করতে হবে না — "আগের তারিখটা কত ছিল?"
 
-**Status:** Planning · Pre-development
+**Status:** Frontend Sprint ১–৫ সম্পন্ন (mock API-র উপর) · Backend শুরু হয়নি
 **Kickoff target:** 1 September 2026
+**বিস্তারিত অবস্থা:** [STATUS.md](STATUS.md)
 
 ---
 
@@ -13,11 +14,13 @@
 
 | Document | Content |
 |---|---|
+| **[STATUS.md](STATUS.md)** | **উন্নয়নের বর্তমান অবস্থা** — কী সম্পন্ন, কী বাকি, ঝুঁকি |
 | **[PROJECT_PLAN.md](PROJECT_PLAN.md)** | মাস্টার প্ল্যান — vision, scope, timeline, team, budget, risk, compliance, GTM |
 | [docs/01-scope-and-requirements.md](docs/01-scope-and-requirements.md) | Personas, core loop, ১৭০+ functional requirement, RBAC matrix, NFR, open questions |
 | [docs/02-architecture-and-stack.md](docs/02-architecture-and-stack.md) | Architecture, multi-tenancy, notification engine, security, integration, API surface |
 | [docs/03-data-model.md](docs/03-data-model.md) | সব entity, field, enum, index, seed data requirement |
 | [docs/04-delivery-roadmap.md](docs/04-delivery-roadmap.md) | Sprint-by-sprint MVP backlog, pilot exit criteria, test strategy, critical path |
+| [docs/05-frontend-plan.md](docs/05-frontend-plan.md) | Lawyer Web (React) — stack decision, folder structure, route map, core loop UI spec, sprint plan, FE test/perf/a11y strategy |
 
 ---
 
