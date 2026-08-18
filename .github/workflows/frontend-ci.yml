@@ -21,9 +21,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # ⚠ কোনো `version:` input দেওয়া যাবে না।
+      #
+      # root `package.json`-এ `packageManager: "pnpm@9.15.9"` আছে, আর
+      # action-setup v4 দুটো একসাথে পেলে থেমে যায়:
+      # "Multiple versions of pnpm specified". সংস্করণের একমাত্র উৎস
+      # `packageManager` — তাতে local ও CI কখনো আলাদা pnpm-এ চলে না।
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - uses: actions/setup-node@v4
         with:
