@@ -107,6 +107,7 @@ export const qk = {
     all: () => ['portal'] as const,
     overview: () => ['portal', 'overview'] as const,
     cases: () => ['portal', 'cases'] as const,
+    advocates: () => ['portal', 'advocates'] as const,
     caseDetail: (id: string) => ['portal', 'cases', id] as const,
     documents: () => ['portal', 'documents'] as const,
     invoices: () => ['portal', 'invoices'] as const,

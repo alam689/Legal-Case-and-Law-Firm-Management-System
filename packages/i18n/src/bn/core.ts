@@ -55,6 +55,31 @@ export const bnCore = {
     metrics: 'মেট্রিক',
     reports: 'রিপোর্ট',
     settings: 'সেটিংস',
+
+    /**
+     * খোলসের মেনু core-এ, feature chunk-এ নয়।
+     *
+     * `PortalShell`/`AdminShell` layout — তারা route-এর lazy chunk-এর
+     * **বাইরে** render হয়, নিজেদের `Suspense`-এর উপরে। তাই chunk-এ
+     * রাখলে প্রথম frame-এ কাঁচা key (`portal.nav.home`) বসত, আর
+     * react-i18next resource যোগ হলে নিজে থেকে re-render করে না বলে
+     * সেটি পরের navigation পর্যন্ত টিকে থাকত। চেম্বারের `AppShell`
+     * উপরের `nav.*` ব্যবহার করে বলেই তার এই সমস্যা কখনো হয়নি।
+     */
+    portal: {
+      home: 'হোম',
+      cases: 'আমার মামলা',
+      appointments: 'সাক্ষাৎ',
+      documents: 'কাগজপত্র',
+      invoices: 'বিল',
+      notices: 'বার্তা',
+    },
+    admin: {
+      title: 'প্ল্যাটফর্ম পরিচালনা',
+      overview: 'সারসংক্ষেপ',
+      firms: 'চেম্বার',
+      usage: 'ব্যবহার',
+    },
   },
   auth: {
     loginTitle: 'আইনজীবী লগইন',
@@ -173,7 +198,10 @@ export const bnCore = {
       descriptionRequired: 'সারির বিবরণ দিন',
       lineRequired: 'অন্তত একটি সারি যোগ করুন',
     },
-    appointment: { reasonRequired: 'কেন দেখা করতে চান, সংক্ষেপে লিখুন' },
+    appointment: {
+      reasonRequired: 'কেন দেখা করতে চান, সংক্ষেপে লিখুন',
+      lawyerRequired: 'কোন আইনজীবীর সাথে দেখা করতে চান বেছে নিন',
+    },
     file: {
       tooLarge: 'ফাইলটি {{size}}-এর চেয়ে বড়',
       unsupported: 'এই ধরনের ফাইল নেওয়া যায় না',
@@ -188,5 +216,8 @@ export const bnCore = {
   legal: {
     disclaimer:
       'CaseFlow BD কোনো আইনি পরামর্শ দেয় না এবং সরকারি আদালত ব্যবস্থার প্রতিস্থাপন নয়। সব তারিখ আইনজীবী কর্তৃক লিখিত, দাপ্তরিকভাবে যাচাইকৃত নয়।',
+    /** মক্কেলের খোলসের footer — উপরের `nav.portal` এর মতোই core-এ। */
+    portalDisclaimer:
+      'এখানকার তথ্য আপনার আইনজীবীর লেখা, আদালতের দাপ্তরিক রেকর্ড নয়। কোনো অমিল মনে হলে চেম্বারে যোগাযোগ করুন।',
   },
 } as const;

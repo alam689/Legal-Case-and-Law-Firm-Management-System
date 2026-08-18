@@ -3,12 +3,6 @@ import type { bnAdmin } from '../bn/admin.js';
 
 export const enAdmin: Mirror<typeof bnAdmin> = {
   admin: {
-    nav: {
-      overview: 'Overview',
-      firms: 'Chambers',
-      usage: 'Usage',
-    },
-    title: 'Platform operations',
     subtitle: 'How each chamber is doing, and where the cost is going.',
     overview: {
       firms: 'Total chambers',

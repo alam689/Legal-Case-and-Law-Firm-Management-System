@@ -137,6 +137,12 @@ function AppointmentCard({
               </Link>
             ) : null}
             <span>{label(APPOINTMENT_MODE_LABELS, appointment.mode, lang)}</span>
+            {/* কার কাছে চাওয়া — সহকারী (P4) যেন ভুল আইনজীবীর হয়ে উত্তর না দেন */}
+            {appointment.lawyer_name ? (
+              <span className="text-fg-muted">
+                {t('appointments.forLawyer')}: {appointment.lawyer_name}
+              </span>
+            ) : null}
           </p>
         </div>
 

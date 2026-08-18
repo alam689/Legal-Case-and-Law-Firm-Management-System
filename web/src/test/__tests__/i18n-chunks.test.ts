@@ -63,6 +63,26 @@ function namespacesUsed(source: string): string[] {
 }
 
 /**
+ * `t('…')`-এর ভেতরে না লেখা key-ও ধরা হয়।
+ *
+ * খোলসগুলো মেনু একটি table-এ রাখে (`{ to, labelKey, icon }`) আর ডাকে
+ * `t(labelKey)`। উপরের regex সেখানে কিছুই দেখে না — এভাবেই
+ * `portal.nav.home` সব জাল পেরিয়ে পর্দায় পৌঁছেছিল। তাই যেকোনো dotted
+ * literal দেখা হয় যার প্রথম অংশ একটি চেনা namespace।
+ *
+ * চেনা namespace-এ না মেলা literal বাদ যায়, তাই import path বা file
+ * name (`'./layout/AppShell'`) ভুল করে গোনা হয় না।
+ */
+function keyNamespacesUsed(source: string, known: ReadonlySet<string>): Array<[string, string]> {
+  const found = new Map<string, string>();
+  for (const match of stripComments(source).matchAll(/'([A-Za-z0-9]+)((?:\.[A-Za-z0-9_]+)+)'/g)) {
+    const ns = match[1] as string;
+    if (known.has(ns)) found.set(ns, `${ns}${match[2] as string}`);
+  }
+  return [...found];
+}
+
+/**
  * Import specifier → `sources`-এর key।
  *
  * Feature-এর chunk হিসাব করতে গোটা feature ধরে নিলে অতিরিক্ত কড়া হয়ে যায়
@@ -95,7 +115,10 @@ function resolveModule(specifier: string, fromFile: string): string | null {
 }
 
 /** একটি file থেকে transitively পৌঁছানো সব namespace, কোথায় ব্যবহৃত তা সহ। */
-function namespacesReachableFrom(entry: string): Array<[string, string]> {
+function namespacesReachableFrom(
+  entry: string,
+  known?: ReadonlySet<string>,
+): Array<[string, string]> {
   const seen = new Set<string>([entry]);
   const queue = [entry];
   const found: Array<[string, string]> = [];
@@ -106,6 +129,9 @@ function namespacesReachableFrom(entry: string): Array<[string, string]> {
     if (!source) continue;
 
     for (const ns of namespacesUsed(source)) found.push([ns, file]);
+    if (known) {
+      for (const [ns, key] of keyNamespacesUsed(source, known)) found.push([ns, `${file} → ${key}`]);
+    }
 
     // static `from '…'` ও dynamic `import('…')` দুটোই
     const specifiers = [
@@ -235,6 +261,69 @@ describe('lazy locale chunk-এর সীমা', () => {
       }
     }
 
+    expect(violations).toEqual([]);
+  });
+
+  /**
+   * দ্বিতীয় ফাঁক, এটিও production-এ ধরা পড়েছে: **খোলস**।
+   *
+   * `element: <PortalShell />` কোনো lazy route নয় — সে layout, তাই
+   * সন্তানের `Suspense`-এর **উপরে** ও **আগে** render হয়। ফলে route যে
+   * chunk আনে সেটি তার কাছে এখনো পৌঁছায়নি, আর react-i18next resource
+   * যোগ হলে নিজে থেকে re-render করে না। উপরের route-ভিত্তিক যাচাই এটি
+   * ধরতে পারে না — সেখানে `features/portal` তো `portal` chunk ঘোষণাই
+   * করেছে। তাই মক্কেলের নিচের tab bar-এ `portal.nav.home` ফুটে উঠত,
+   * আর পরের navigation-এ হঠাৎ ঠিক হয়ে যেত।
+   *
+   * নিয়ম: খোলসের লেখা core-এ থাকতেই হবে — `AppShell` যেমন `nav.*`
+   * ব্যবহার করে।
+   */
+  it('খোলস (layout element) শুধু core-এর namespace ছোঁয়', async () => {
+    const known = new Set<string>(CORE_NAMESPACES);
+    for (const chunk of LOCALE_CHUNKS) {
+      for (const ns of Object.keys(await loadLocaleChunk('bn', chunk))) known.add(ns);
+    }
+
+    const routesSource = sources['/src/app/routes.tsx'] as string;
+    expect(routesSource, 'routes.tsx পড়া যায়নি').toBeTruthy();
+
+    /** `import { PortalShell } from '@/…/PortalShell';` → নাম → specifier */
+    const importedFrom = new Map<string, string>();
+    for (const match of routesSource.matchAll(/import\s*\{([^}]*)\}\s*from\s*'([^']+)'/g)) {
+      for (const name of (match[1] as string).split(',')) {
+        const clean = name.trim().split(/\s+as\s+/).pop()?.trim();
+        if (clean) importedFrom.set(clean, match[2] as string);
+      }
+    }
+
+    // `element: <PortalShell />` — lazyElement(…) দিয়ে আসা route নয়
+    const shellNames = new Set(
+      [...routesSource.matchAll(/element:\s*<([A-Z]\w*)/g)].map((match) => match[1] as string),
+    );
+    expect(shellNames.size, 'কোনো layout element পাওয়া যায়নি').toBeGreaterThan(0);
+
+    const violations: string[] = [];
+    let scanned = 0;
+
+    for (const name of shellNames) {
+      const specifier = importedFrom.get(name);
+      if (!specifier) continue; // একই file-এ ঘোষিত — scan করার আলাদা কিছু নেই
+
+      const entry = resolveModule(specifier, '/src/app/routes.tsx');
+      if (!entry) continue;
+      scanned += 1;
+
+      for (const [ns, from] of namespacesReachableFrom(entry, known)) {
+        if (!CORE_NAMESPACES.includes(ns)) {
+          violations.push(
+            `<${name}>: "${ns}" core-এ নেই (${from}) — খোলস chunk-এর অপেক্ষা করতে পারে না`,
+          );
+        }
+      }
+    }
+
+    // জালটি নিজে ছিঁড়ে গেলে (import regex না মিললে) নীরবে সবুজ হওয়া চলবে না
+    expect(scanned, 'কোনো খোলসই scan হয়নি').toBeGreaterThan(0);
     expect(violations).toEqual([]);
   });
 

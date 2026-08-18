@@ -40,12 +40,12 @@ interface PortalNavItem {
 }
 
 const PORTAL_NAV: PortalNavItem[] = [
-  { to: '/portal', labelKey: 'portal.nav.home', icon: Home },
-  { to: '/portal/cases', labelKey: 'portal.nav.cases', icon: Gavel },
-  { to: '/portal/appointments', labelKey: 'portal.nav.appointments', icon: CalendarCheck },
-  { to: '/portal/documents', labelKey: 'portal.nav.documents', icon: FileText },
-  { to: '/portal/invoices', labelKey: 'portal.nav.invoices', icon: Receipt },
-  { to: '/portal/notices', labelKey: 'portal.nav.notices', icon: MessageSquare },
+  { to: '/portal', labelKey: 'nav.portal.home', icon: Home },
+  { to: '/portal/cases', labelKey: 'nav.portal.cases', icon: Gavel },
+  { to: '/portal/appointments', labelKey: 'nav.portal.appointments', icon: CalendarCheck },
+  { to: '/portal/documents', labelKey: 'nav.portal.documents', icon: FileText },
+  { to: '/portal/invoices', labelKey: 'nav.portal.invoices', icon: Receipt },
+  { to: '/portal/notices', labelKey: 'nav.portal.notices', icon: MessageSquare },
 ];
 
 export function PortalShell() {
@@ -122,7 +122,7 @@ export function PortalShell() {
 
       <footer className="border-t border-border px-4 py-4 pb-24 sm:pb-4">
         <p className="mx-auto max-w-3xl text-xs leading-relaxed text-fg-subtle">
-          {t('portal.disclaimer')}
+          {t('legal.portalDisclaimer')}
         </p>
       </footer>
 

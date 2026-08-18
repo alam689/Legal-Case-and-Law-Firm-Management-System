@@ -3,14 +3,6 @@ import type { bnPortal } from '../bn/portal.js';
 
 export const enPortal: Mirror<typeof bnPortal> = {
   portal: {
-    nav: {
-      home: 'Home',
-      cases: 'My cases',
-      appointments: 'Meetings',
-      documents: 'Papers',
-      invoices: 'Bills',
-      notices: 'Messages',
-    },
     home: {
       greeting: 'Assalamu alaikum, {{name}}',
       subtitle: 'Where your cases stand, at a glance.',
@@ -69,7 +61,5 @@ export const enPortal: Mirror<typeof bnPortal> = {
       delivered: 'Delivered',
       notDelivered: 'Not delivered',
     },
-    disclaimer:
-      'This information is written by your advocate; it is not the official court record. Contact the chamber if anything looks wrong.',
   },
 };

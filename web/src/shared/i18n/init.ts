@@ -39,6 +39,15 @@ void i18n.use(initReactI18next).init({
   returnNull: false,
 
   /**
+   * Lazy chunk বসলে (`addResourceBundle`) react-i18next-কে re-render করতে
+   * বলা হয়। default-এ সে শুধু `languageChanged` শোনে — তাই chunk আসার
+   * আগে যে component render হয়ে গেছে সে কাঁচা key নিয়েই বসে থাকত,
+   * পরের navigation পর্যন্ত। খোলসের লেখা core-এ সরানো হয়েছে বলে এটি
+   * আর দরকার হওয়ার কথা নয়; ভবিষ্যতের একই ভুল যেন পর্দায় না পৌঁছায়।
+   */
+  react: { bindI18nStore: 'added' },
+
+  /**
    * Test-এ অনুপস্থিত key নীরবে raw string হিসেবে render হতে দেওয়া হয় না।
    *
    * কারণ: key ভুল namespace-এ বসলে locale parity test সেটি ধরতে পারে না

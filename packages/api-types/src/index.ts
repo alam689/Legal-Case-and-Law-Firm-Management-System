@@ -1041,6 +1041,27 @@ export interface PortalDocumentItem {
   file_url: string | null;
 }
 
+/**
+ * মক্কেল কার সাথে দেখা করতে চান।
+ *
+ * এক চেম্বারে একাধিক আইনজীবী, আর এক মক্কেলের এক মামলা একজনের হাতে,
+ * আরেকটি অন্যজনের। "সাক্ষাৎ চাই" বললে অনুরোধটি কার তালিকায় পড়বে তা
+ * মক্কেলই ঠিক করেন — নাহলে সেটি ভুল মানুষের কাছে গিয়ে পড়ে থাকে, আর
+ * মক্কেল ভাবেন চেম্বার উত্তর দিচ্ছে না।
+ *
+ * তালিকাটি মক্কেলের **নিজের** মামলার আইনজীবীদের; চেম্বারের পুরো সদস্য
+ * তালিকা কখনো portal-এ যায় না (rule A4)। কোনো মামলায় আইনজীবী বসানো না
+ * থাকলে server চেম্বারের প্রধান আইনজীবীকে ফেরত দেয়, যাতে তালিকা কখনো
+ * খালি না হয় — খালি তালিকা মানে মক্কেল সাক্ষাৎই চাইতে পারছেন না।
+ */
+export interface PortalAdvocateItem {
+  id: Uuid;
+  name: string;
+  name_bn: string | null;
+  /** এই আইনজীবীর হাতে মক্কেলের কতগুলো মামলা — বাছাই সহজ করে */
+  case_count: number;
+}
+
 export interface PortalCaseDetail extends PortalCaseItem {
   /** শুধু `client_visible` ঘটনা (rule A4) */
   timeline: PortalTimelineEntry[];
@@ -1161,6 +1182,9 @@ export interface AppointmentItem {
   client_mobile: string;
   case_id: Uuid | null;
   case_display_number: string | null;
+  /** কার সাথে দেখা করতে চাওয়া — পুরনো অনুরোধে `null` */
+  lawyer_id: Uuid | null;
+  lawyer_name: string | null;
   requested_date: IsoDate;
   requested_time: string | null;
   confirmed_date: IsoDate | null;
@@ -1182,6 +1206,8 @@ export interface AppointmentRequestRequest {
   mode: AppointmentMode;
   reason: string;
   case_id?: Uuid | null;
+  /** কোন আইনজীবীর কাছে — `GET /portal/advocates`-এর একটি id */
+  lawyer_id: Uuid;
 }
 
 /**

@@ -16,6 +16,7 @@ export const bnAppointments = {
     reason: 'কারণ',
     responseNote: 'চেম্বারের বক্তব্য',
     decidedBy: '{{name}} সিদ্ধান্ত নিয়েছেন',
+    forLawyer: 'যাঁর সাথে',
     anyTime: 'সময় নির্দিষ্ট নয়',
     confirm: 'সময় দিন',
     confirmTitle: 'সাক্ষাতের সময় দিন',
@@ -34,6 +35,10 @@ export const bnAppointments = {
       reason: 'কী বিষয়ে কথা বলতে চান',
       case: 'কোন মামলা নিয়ে',
       noCase: 'কোনো নির্দিষ্ট মামলা নয়',
+      lawyer: 'কোন আইনজীবীর সাথে',
+      chooseLawyer: 'আইনজীবী বাছুন',
+      /** একাধিক মামলা থাকলে কে কোনটি দেখছেন সেটিই বাছাইয়ের সবচেয়ে বড় সূত্র */
+      lawyerCases: '{{name}} · {{value}}টি মামলা',
     },
     portal: {
       title: 'সাক্ষাতের সময়',
@@ -48,6 +53,8 @@ export const bnAppointments = {
       cancelTitle: 'অনুরোধ বাতিল করবেন?',
       cancelBody: 'এই অনুরোধটি বাতিল হয়ে যাবে। চাইলে পরে আবার সময় চাইতে পারবেন।',
       pastDateHint: 'আজ বা তার পরের কোনো দিন বাছুন।',
+      lawyerHint: 'যিনি আপনার মামলা দেখছেন, তাঁর কাছেই অনুরোধটি যাবে।',
+      onlyLawyerHint: 'আপনার মামলা {{name}} দেখছেন।',
       waiting: 'চেম্বারের উত্তরের অপেক্ষায়',
       changedNotice: 'চেম্বার অন্য সময় দিয়েছে — নিচে দেখুন।',
     },

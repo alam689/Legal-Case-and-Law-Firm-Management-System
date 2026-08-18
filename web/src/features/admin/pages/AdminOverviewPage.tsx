@@ -32,7 +32,9 @@ export default function AdminOverviewPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-bold tracking-tight text-fg">{t('admin.title')}</h1>
+        {/* শিরোনামটি `nav.*`-এ (core) — `AdminShell`-এর header-এও একই লেখা লাগে
+            আর খোলস `admin` chunk-এর অপেক্ষা করতে পারে না। */}
+        <h1 className="text-2xl font-bold tracking-tight text-fg">{t('nav.admin.title')}</h1>
         <p className="mt-1 text-sm text-fg-muted">{t('admin.subtitle')}</p>
       </header>
 

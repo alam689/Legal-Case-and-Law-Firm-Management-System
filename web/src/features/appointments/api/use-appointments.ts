@@ -3,6 +3,7 @@ import type {
   AppointmentItem,
   AppointmentRequestRequest,
   CursorPage,
+  PortalAdvocateItem,
   PortalCaseItem,
 } from '@caseflow/api-types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -85,6 +86,21 @@ export function useCancelAppointment() {
  * query key একই (`qk.portal.cases()`), তাই cache ভাগাভাগি হয় এবং
  * মক্কেলের মামলার তালিকা দুবার নেটওয়ার্ক থেকে আসে না।
  */
+/**
+ * "কোন আইনজীবীর সাথে" — মক্কেলের নিজের মামলার আইনজীবীরা।
+ *
+ * `staleTime` মামলার তালিকার সমান: চেম্বারে কে কোন মামলা দেখছেন তা
+ * দিনে দশবার বদলায় না, আর dialog খোলার সময় নতুন request পাঠালে
+ * দুর্বল সংযোগে ফর্মটিই দেরিতে দাঁড়াত।
+ */
+export function usePortalAdvocates() {
+  return useQuery({
+    queryKey: qk.portal.advocates(),
+    queryFn: () => http.get<CursorPage<PortalAdvocateItem>>('/portal/advocates'),
+    staleTime: 60_000,
+  });
+}
+
 export function usePortalCaseOptions() {
   return useQuery({
     queryKey: qk.portal.cases(),

@@ -355,6 +355,14 @@ export const appointmentRequestSchema = z.object({
   /** কারণ বাধ্যতামূলক — চেম্বার প্রস্তুত হয়ে বসতে পারে, আর সময়ও কম লাগে */
   reason: z.string().trim().min(3, 'validation.appointment.reasonRequired').max(500),
   case_id: z.string().trim().optional().or(z.literal('')),
+  /**
+   * কোন আইনজীবী — বাধ্যতামূলক।
+   *
+   * এক চেম্বারে একাধিক আইনজীবী থাকলে "কারো একজনের" অনুরোধ কার্যত কারোরই
+   * নয়; কেউ দায়িত্ব নেয় না বলে সেটি পড়ে থাকে। মক্কেলের একজনই আইনজীবী
+   * হলে ফর্ম নিজেই তাঁকে বসিয়ে দেয়, তাই বাড়তি ক্লিক লাগে না।
+   */
+  lawyer_id: z.string().trim().min(1, 'validation.appointment.lawyerRequired'),
 });
 
 export const appointmentDecisionSchema = z.object({

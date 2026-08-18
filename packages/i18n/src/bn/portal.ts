@@ -1,13 +1,5 @@
 export const bnPortal = {
   portal: {
-    nav: {
-      home: 'হোম',
-      cases: 'আমার মামলা',
-      appointments: 'সাক্ষাৎ',
-      documents: 'কাগজপত্র',
-      invoices: 'বিল',
-      notices: 'বার্তা',
-    },
     home: {
       greeting: 'আসসালামু আলাইকুম, {{name}}',
       subtitle: 'আপনার মামলার সর্বশেষ অবস্থা এক নজরে।',
@@ -66,7 +58,5 @@ export const bnPortal = {
       delivered: 'পৌঁছেছে',
       notDelivered: 'পৌঁছায়নি',
     },
-    disclaimer:
-      'এখানকার তথ্য আপনার আইনজীবীর লেখা, আদালতের দাপ্তরিক রেকর্ড নয়। কোনো অমিল মনে হলে চেম্বারে যোগাযোগ করুন।',
   },
 } as const;

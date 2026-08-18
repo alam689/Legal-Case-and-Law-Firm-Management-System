@@ -1,11 +1,5 @@
 export const bnAdmin = {
   admin: {
-    nav: {
-      overview: 'সারসংক্ষেপ',
-      firms: 'চেম্বার',
-      usage: 'ব্যবহার',
-    },
-    title: 'প্ল্যাটফর্ম পরিচালনা',
     subtitle: 'কোন চেম্বার কেমন চলছে, আর খরচ কোথায় যাচ্ছে।',
     overview: {
       firms: 'মোট চেম্বার',

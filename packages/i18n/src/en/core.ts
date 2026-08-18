@@ -53,6 +53,20 @@ export const enCore: Mirror<typeof bnCore> = {
     metrics: 'Metrics',
     reports: 'Reports',
     settings: 'Settings',
+    portal: {
+      home: 'Home',
+      cases: 'My cases',
+      appointments: 'Appointments',
+      documents: 'Papers',
+      invoices: 'Bills',
+      notices: 'Messages',
+    },
+    admin: {
+      title: 'Platform operations',
+      overview: 'Overview',
+      firms: 'Chambers',
+      usage: 'Usage',
+    },
   },
   auth: {
     loginTitle: 'Advocate login',
@@ -172,7 +186,10 @@ export const enCore: Mirror<typeof bnCore> = {
       descriptionRequired: 'Describe this line',
       lineRequired: 'Add at least one line',
     },
-    appointment: { reasonRequired: 'Briefly say why you want to meet' },
+    appointment: {
+      reasonRequired: 'Briefly say why you want to meet',
+      lawyerRequired: 'Choose which advocate you want to meet',
+    },
     file: {
       tooLarge: 'File is larger than {{size}}',
       unsupported: 'That file type is not accepted',
@@ -187,5 +204,7 @@ export const enCore: Mirror<typeof bnCore> = {
   legal: {
     disclaimer:
       'CaseFlow BD does not provide legal advice and is not a replacement for the official court system. All dates are entered by the advocate and are not officially verified.',
+    portalDisclaimer:
+      'This information is written by your advocate; it is not the official court record. Contact the chamber if anything looks wrong.',
   },
 };

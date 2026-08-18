@@ -10,13 +10,14 @@ import {
   optionsOf,
 } from '@caseflow/domain';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CalendarClock, CheckCircle2, Info, Plus } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { CalendarClock, CheckCircle2, Info, Plus, UserRound } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import { isApiError } from '@/shared/api/errors';
-import { todayIso } from '@/shared/i18n/formatters';
+import { pickBilingual } from '@/shared/i18n/bilingual';
+import { formatNumber, todayIso } from '@/shared/i18n/formatters';
 import { useLocale } from '@/shared/i18n/use-locale';
 import { Badge } from '@/shared/ui/Badge';
 import { Button } from '@/shared/ui/Button';
@@ -31,6 +32,7 @@ import { EmptyState, ErrorState } from '@/shared/ui/states';
 
 import {
   useCancelAppointment,
+  usePortalAdvocates,
   usePortalAppointments,
   usePortalCaseOptions,
   useRequestAppointment,
@@ -115,6 +117,14 @@ function PortalAppointmentCard({ appointment }: { appointment: AppointmentItem }
         </Badge>
       </div>
 
+      {/* কার সাথে — একাধিক আইনজীবী থাকলে এটিই মক্কেলের প্রধান প্রশ্ন */}
+      {appointment.lawyer_name ? (
+        <p className="flex items-center gap-2 text-sm font-medium text-fg">
+          <UserRound className="h-4 w-4 shrink-0 text-fg-subtle" aria-hidden />
+          {appointment.lawyer_name}
+        </p>
+      ) : null}
+
       <p className="text-sm text-fg-muted">
         {label(APPOINTMENT_MODE_LABELS, appointment.mode, lang)}
         {appointment.case_display_number ? (
@@ -182,6 +192,7 @@ interface RequestFormValues {
   mode: string;
   reason: string;
   case_id: string;
+  lawyer_id: string;
 }
 
 function RequestDialog({
@@ -196,6 +207,7 @@ function RequestDialog({
   const lang = locale === 'en' ? 'EN' : 'BN';
   const request = useRequestAppointment();
   const cases = usePortalCaseOptions();
+  const advocates = usePortalAdvocates();
   const [done, setDone] = useState(false);
 
   const modeOptions = useMemo(
@@ -212,10 +224,32 @@ function RequestDialog({
     [cases.data],
   );
 
+  const advocateList = useMemo(() => advocates.data?.results ?? [], [advocates.data]);
+
+  const advocateOptions = useMemo(
+    () =>
+      advocateList.map((item) => {
+        const name = pickBilingual(item.name, item.name_bn, locale, item.name);
+        return {
+          value: item.id,
+          // মামলা না থাকলে "০টি মামলা" লেখা অর্থহীন — শুধু নাম
+          label:
+            item.case_count > 0
+              ? t('appointments.fields.lawyerCases', {
+                  name,
+                  value: formatNumber(item.case_count, locale),
+                })
+              : name,
+        };
+      }),
+    [advocateList, locale, t],
+  );
+
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<RequestFormValues>({
     resolver: zodResolver(appointmentRequestSchema),
@@ -225,8 +259,23 @@ function RequestDialog({
       mode: 'CHAMBER',
       reason: '',
       case_id: '',
+      lawyer_id: '',
     },
   });
+
+  /**
+   * একজনই আইনজীবী হলে তাঁকে বসিয়ে দেওয়া হয়।
+   *
+   * বেশিরভাগ মক্কেলের একজনই আইনজীবী; তাঁদের কাছে বাছাইটি কোনো প্রশ্নই
+   * নয়, শুধু একটি বাড়তি ক্লিক। ঘরটি তবু দেখা যায় — কার কাছে অনুরোধ
+   * যাচ্ছে সেটি লুকিয়ে রাখলে পরে "আমি তো ওনাকে বলিনি" হয়।
+   *
+   * তালিকা async আসে বলে `defaultValues`-এ এটি করা যেত না।
+   */
+  const onlyAdvocate = advocateList.length === 1 ? advocateList[0] : undefined;
+  useEffect(() => {
+    if (onlyAdvocate) setValue('lawyer_id', onlyAdvocate.id);
+  }, [onlyAdvocate, setValue]);
 
   const messageFor = (key: keyof RequestFormValues): string | undefined =>
     errors[key] ? t(errors[key]?.message ?? 'validation.required') : undefined;
@@ -262,11 +311,31 @@ function RequestDialog({
                 mode: values.mode as AppointmentMode,
                 reason: values.reason,
                 case_id: values.case_id || null,
+                lawyer_id: values.lawyer_id,
               } satisfies AppointmentRequestRequest,
               { onSuccess: () => setDone(true) },
             ),
           )}
         >
+          {/* "কার সাথে" সবার আগে — বাকি সব সিদ্ধান্ত এটির উপরে দাঁড়ায় */}
+          <div className="space-y-1.5">
+            <Select
+              label={t('appointments.fields.lawyer')}
+              options={advocateOptions}
+              placeholder={onlyAdvocate ? undefined : t('appointments.fields.chooseLawyer')}
+              disabled={advocates.isPending}
+              error={messageFor('lawyer_id')}
+              {...register('lawyer_id')}
+            />
+            <p className="text-xs text-fg-muted">
+              {onlyAdvocate
+                ? t('appointments.portal.onlyLawyerHint', {
+                    name: pickBilingual(onlyAdvocate.name, onlyAdvocate.name_bn, locale, onlyAdvocate.name),
+                  })
+                : t('appointments.portal.lawyerHint')}
+            </p>
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
               label={t('appointments.fields.date')}

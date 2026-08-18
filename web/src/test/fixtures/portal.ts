@@ -1,4 +1,5 @@
 import type {
+  PortalAdvocateItem,
   PortalCaseDetail,
   PortalCaseItem,
   PortalDocumentItem,
@@ -14,6 +15,7 @@ import { listCaseHearings, listCaseTimeline } from './hearings';
 import { firmFixture } from './personas';
 import { listDispatches } from './notifications';
 import { workflowsFixture } from './reference';
+import { listStaff } from './staff';
 import { casesForClient, getCase } from './store';
 
 /**
@@ -98,6 +100,43 @@ export function portalCases(clientId: string, todayIso: string): PortalCaseItem[
   return casesForClient(clientId)
     .map((item) => toPortalCase(item.id, todayIso))
     .filter(Boolean) as PortalCaseItem[];
+}
+
+/**
+ * মক্কেল কার কার সাথে দেখা করতে পারেন।
+ *
+ * উৎস মক্কেলের নিজের মামলা — চেম্বারের সদস্য তালিকা নয় (rule A4)। যাঁর
+ * হাতে তাঁর কোনো মামলাই নেই, তাঁর নাম মক্কেলের পর্দায় ওঠার কথা নয়।
+ *
+ * কোনো মামলায় আইনজীবী বসানো না থাকলে তালিকা খালি হয়ে যেত, আর মক্কেল
+ * সাক্ষাৎই চাইতে পারতেন না — তাই তখন চেম্বারের প্রধানকে দেওয়া হয়।
+ */
+export function portalAdvocates(clientId: string): PortalAdvocateItem[] {
+  const staff = listStaff();
+  const counts = new Map<string, number>();
+
+  for (const item of casesForClient(clientId)) {
+    if (!item.assigned_lawyer_id) continue;
+    counts.set(item.assigned_lawyer_id, (counts.get(item.assigned_lawyer_id) ?? 0) + 1);
+  }
+
+  const advocates = staff
+    .filter((member) => counts.has(member.id))
+    .map((member) => ({
+      id: member.id,
+      name: member.full_name,
+      name_bn: member.full_name_bn,
+      case_count: counts.get(member.id) ?? 0,
+    }))
+    // যাঁর হাতে বেশি মামলা তিনি আগে — মক্কেল সাধারণত তাঁকেই খোঁজেন
+    .sort((a, b) => b.case_count - a.case_count);
+
+  if (advocates.length > 0) return advocates;
+
+  const head = staff.find((member) => member.role === 'FIRM_ADMIN') ?? staff[0];
+  return head
+    ? [{ id: head.id, name: head.full_name, name_bn: head.full_name_bn, case_count: 0 }]
+    : [];
 }
 
 function portalDocumentsFor(caseIds: readonly string[]): PortalDocumentItem[] {

@@ -179,6 +179,65 @@ function seedCases(): CaseRecord[] {
         },
       ],
     },
+    /**
+     * একই মক্কেল, দ্বিতীয় আইনজীবী।
+     *
+     * বাস্তবে এক মক্কেল চেম্বারের একজনের কাছেই আটকে থাকেন না — জমির
+     * মামলা একজন দেখেন, পারিবারিক মামলা অন্যজন। সাক্ষাতের অনুরোধে
+     * "কার সাথে" প্রশ্নটি এই কারণেই আছে, আর demo data-তেও সেটি দেখা
+     * যাওয়া দরকার; একটিমাত্র আইনজীবী থাকলে বাছাইয়ের ঘরটি কখনো
+     * পরীক্ষাই হত না।
+     */
+    {
+      id: 'case-4',
+      display_number: '৩১২/২০২৫',
+      case_number: '312',
+      case_year: 2025,
+      title: 'মোঃ রহিম উদ্দিন বনাম ফরিদা বেগম',
+      case_category: 'FAMILY',
+      status: 'ACTIVE',
+      current_stage: 'HEARING',
+      court: court('court-1'),
+      our_side: 'PLAINTIFF',
+      client_names: ['মোঃ রহিম উদ্দিন'],
+      client_ids: ['client-1'],
+      amount_due: '0.00',
+      filing_date: '2025-06-09',
+      workflow_definition_id: 'wf-1',
+      workflow_version: 1,
+      workflow_court_type_code: 'CIVIL_DISTRICT',
+      subject_matter: 'দেনমোহর ও ভরণপোষণ আদায়ের আবেদন।',
+      relief_sought: 'বকেয়া দেনমোহর ও মাসিক ভরণপোষণ।',
+      internal_notes: 'সমঝোতার সম্ভাবনা আছে — পরের তারিখের আগে কথা বলা হবে।',
+      opened_at: '2025-06-09T06:00:00Z',
+      closed_at: null,
+      assigned_lawyer_id: 'staff-2',
+      assigned_lawyer_name: 'নুসরাত জাহান',
+      parties: [
+        {
+          id: 'party-9',
+          party_type: 'PLAINTIFF',
+          name: 'Md Rahim Uddin',
+          name_bn: 'মোঃ রহিম উদ্দিন',
+          address: 'ধানমন্ডি, ঢাকা',
+          mobile: '01711223344',
+          advocate_name: null,
+          is_our_client: true,
+          serial_no: 1,
+        },
+        {
+          id: 'party-10',
+          party_type: 'DEFENDANT',
+          name: 'Farida Begum',
+          name_bn: 'ফরিদা বেগম',
+          address: 'মিরপুর, ঢাকা',
+          mobile: null,
+          advocate_name: null,
+          is_our_client: false,
+          serial_no: 2,
+        },
+      ],
+    },
     {
       id: 'case-2',
       display_number: '৮৭/২০২৩',
@@ -242,7 +301,9 @@ function seedCases(): CaseRecord[] {
  * বাস্তব আকারের firm দরকার, তাই seed-এর পরে আরও মামলা তৈরি করা হয়।
  * প্রকৃত pilot chamber-এ ১৫০–৪০০ মামলা স্বাভাবিক (docs/01-scope §1)।
  */
-const BULK_CASE_COUNT = 497;
+const TARGET_CASE_COUNT = 500;
+/** হাতে লেখা seed বাদ দিয়ে বাকিটা — নতুন seed যোগ হলে মোট ৫০০-ই থাকে */
+const BULK_CASE_COUNT = TARGET_CASE_COUNT - seedCases().length;
 
 /**
  * Bulk মামলাগুলো চেম্বারের সদস্যদের মধ্যে ভাগ করা — নাহলে "কার হাতে কত"

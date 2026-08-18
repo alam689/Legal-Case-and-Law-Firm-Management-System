@@ -18,9 +18,9 @@ import { Button } from '@/shared/ui/Button';
  */
 const ADMIN_NAV: Array<{ to: string; labelKey: string; icon: ComponentType<{ className?: string }> }> =
   [
-    { to: '/admin', labelKey: 'admin.nav.overview', icon: Gauge },
-    { to: '/admin/firms', labelKey: 'admin.nav.firms', icon: Building2 },
-    { to: '/admin/usage', labelKey: 'admin.nav.usage', icon: Signal },
+    { to: '/admin', labelKey: 'nav.admin.overview', icon: Gauge },
+    { to: '/admin/firms', labelKey: 'nav.admin.firms', icon: Building2 },
+    { to: '/admin/usage', labelKey: 'nav.admin.usage', icon: Signal },
   ];
 
 export function AdminShell() {
@@ -39,7 +39,7 @@ export function AdminShell() {
           <div className="flex min-w-0 items-center gap-2">
             <Scale className="h-5 w-5 shrink-0 text-primary" aria-hidden />
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-fg">{t('admin.title')}</p>
+              <p className="truncate text-sm font-semibold text-fg">{t('nav.admin.title')}</p>
               <p className="truncate text-xs text-fg-subtle">{t('common.appName')}</p>
             </div>
           </div>

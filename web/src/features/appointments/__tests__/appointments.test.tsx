@@ -165,6 +165,10 @@ describe('মক্কেলের দিক (P1)', () => {
     await user.click(screen.getByRole('button', { name: /সময় চান/ }));
 
     const dialog = await screen.findByRole('dialog');
+    await user.selectOptions(
+      await within(dialog).findByLabelText('কোন আইনজীবীর সাথে'),
+      'staff-1',
+    );
     await user.type(within(dialog).getByLabelText('কোন দিন'), '2026-08-25');
     await user.type(
       within(dialog).getByLabelText('কী বিষয়ে কথা বলতে চান'),
@@ -186,12 +190,87 @@ describe('মক্কেলের দিক (P1)', () => {
     await user.click(screen.getByRole('button', { name: /সময় চান/ }));
 
     const dialog = await screen.findByRole('dialog');
+    await user.selectOptions(
+      await within(dialog).findByLabelText('কোন আইনজীবীর সাথে'),
+      'staff-1',
+    );
     await user.type(within(dialog).getByLabelText('কোন দিন'), '2026-08-25');
     await user.click(within(dialog).getAllByRole('button', { name: /সময় চান/ })[0] as HTMLElement);
 
     expect(await within(dialog).findByRole('alert')).toHaveTextContent(
       'কেন দেখা করতে চান, সংক্ষেপে লিখুন',
     );
+  });
+
+  /**
+   * এক মক্কেল একাধিক আইনজীবীর কাছে যান — জমির মামলা একজন, পারিবারিক
+   * মামলা অন্যজন। "কার সাথে" না জিজ্ঞেস করলে অনুরোধটি ভুল তালিকায়
+   * পড়ে থাকে, আর মক্কেল ভাবেন চেম্বার উত্তরই দিচ্ছে না।
+   */
+  it('নিজের মামলার আইনজীবীদের মধ্যে থেকে বাছা যায়', async () => {
+    const user = userEvent.setup();
+    signInAsClient();
+    renderPortal();
+
+    await screen.findByText('চেম্বারের উত্তরের অপেক্ষায়');
+    await user.click(screen.getByRole('button', { name: /সময় চান/ }));
+
+    const dialog = await screen.findByRole('dialog');
+    const picker = await within(dialog).findByLabelText('কোন আইনজীবীর সাথে');
+
+    expect(within(picker).getByRole('option', { name: /মোঃ খোরশেদ আলম/ })).toBeInTheDocument();
+    expect(within(picker).getByRole('option', { name: /নুসরাত জাহান/ })).toBeInTheDocument();
+    // চেম্বারের সব সদস্য নয় — যাঁর হাতে এই মক্কেলের মামলা নেই তিনি নেই (A4)
+    expect(within(picker).queryByRole('option', { name: /সুমন চন্দ্র দাস/ })).not.toBeInTheDocument();
+  });
+
+  it('আইনজীবী না বাছলে অনুরোধ যায় না', async () => {
+    const user = userEvent.setup();
+    signInAsClient();
+    renderPortal();
+
+    await screen.findByText('চেম্বারের উত্তরের অপেক্ষায়');
+    await user.click(screen.getByRole('button', { name: /সময় চান/ }));
+
+    const dialog = await screen.findByRole('dialog');
+    await within(dialog).findByLabelText('কোন আইনজীবীর সাথে');
+    await user.type(within(dialog).getByLabelText('কোন দিন'), '2026-08-25');
+    await user.type(
+      within(dialog).getByLabelText('কী বিষয়ে কথা বলতে চান'),
+      'ফি নিয়ে কথা বলতে চাই।',
+    );
+    await user.click(within(dialog).getAllByRole('button', { name: /সময় চান/ })[0] as HTMLElement);
+
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+      'কোন আইনজীবীর সাথে দেখা করতে চান বেছে নিন',
+    );
+  });
+
+  /** বেছে নেওয়া নামটি চেম্বারের তালিকাতেও পৌঁছায় — নাহলে বাছাইটি অর্থহীন। */
+  it('বাছা আইনজীবীর নাম অনুরোধের সাথে যায়', async () => {
+    const user = userEvent.setup();
+    signInAsClient();
+    renderPortal();
+
+    await screen.findByText('চেম্বারের উত্তরের অপেক্ষায়');
+    await user.click(screen.getByRole('button', { name: /সময় চান/ }));
+
+    const dialog = await screen.findByRole('dialog');
+    await user.selectOptions(
+      await within(dialog).findByLabelText('কোন আইনজীবীর সাথে'),
+      'staff-2',
+    );
+    await user.type(within(dialog).getByLabelText('কোন দিন'), '2026-08-25');
+    await user.type(
+      within(dialog).getByLabelText('কী বিষয়ে কথা বলতে চান'),
+      'ভরণপোষণের আবেদন নিয়ে কথা বলতে চাই।',
+    );
+    await user.click(within(dialog).getAllByRole('button', { name: /সময় চান/ })[0] as HTMLElement);
+
+    await screen.findByText('অনুরোধ পাঠানো হয়েছে');
+
+    // dialog খোলা থাকলেও পেছনের তালিকা হালনাগাদ হয়ে যায়
+    await waitFor(() => expect(screen.getAllByText('নুসরাত জাহান').length).toBeGreaterThan(0));
   });
 
   it('নিজের অপেক্ষমাণ অনুরোধ বাতিল করা যায়', async () => {

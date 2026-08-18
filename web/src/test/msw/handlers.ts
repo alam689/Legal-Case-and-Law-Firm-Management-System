@@ -72,6 +72,7 @@ import {
   decideAppointment,
   listAppointments,
   portalAppointments,
+  portalAdvocates,
   requestAppointment,
   buildFirmWorkload,
   buildPlatformSummary,
@@ -690,6 +691,16 @@ export const handlers = [
     HttpResponse.json(portalOverview(DEMO_CLIENT_ID, todayInDhaka())),
   ),
 
+  /**
+   * "কার সাথে দেখা করব" — মক্কেলের নিজের মামলার আইনজীবীরা।
+   *
+   * চেম্বারের `/staff` নয়: সেখানে সহকারী ও হিসাবরক্ষকও আছেন, আর কারা
+   * চেম্বারে কাজ করেন সেটি মক্কেলের জানার কথা নয়।
+   */
+  mswHttp.get(url('/portal/advocates'), () =>
+    HttpResponse.json({ results: portalAdvocates(DEMO_CLIENT_ID), next: null, previous: null }),
+  ),
+
   mswHttp.get(url('/portal/cases'), () =>
     HttpResponse.json({
       results: portalCases(DEMO_CLIENT_ID, todayInDhaka()),
@@ -790,6 +801,10 @@ export const handlers = [
     const body = (await request.json()) as Parameters<typeof requestAppointment>[3];
     if (!body.requested_date || !body.reason) {
       return errorEnvelope('validation_error', 'Date and reason are required', 400);
+    }
+    // অচেনা আইনজীবীর কাছে অনুরোধ পাঠানো যায় না — server-ই শেষ কথা
+    if (!portalAdvocates(DEMO_CLIENT_ID).some((item) => item.id === body.lawyer_id)) {
+      return errorEnvelope('validation_error', 'Unknown advocate', 400);
     }
     const client = PERSONA_FIXTURES.client;
     return HttpResponse.json(

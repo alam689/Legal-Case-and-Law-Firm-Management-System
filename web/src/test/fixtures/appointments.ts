@@ -4,6 +4,7 @@ import type {
   AppointmentRequestRequest,
 } from '@caseflow/api-types';
 
+import { listStaff } from './staff';
 import { getCase } from './store';
 
 /**
@@ -36,6 +37,8 @@ function seedAppointments(): AppointmentRecord[] {
       client_mobile: '01711223344',
       case_id: 'case-1',
       case_display_number: '২৫১/২০২৪',
+      lawyer_id: 'staff-1',
+      lawyer_name: 'মোঃ খোরশেদ আলম',
       requested_date: '2026-08-20',
       requested_time: '11:00',
       confirmed_date: null,
@@ -55,6 +58,8 @@ function seedAppointments(): AppointmentRecord[] {
       client_mobile: '01812345678',
       case_id: 'case-2',
       case_display_number: '৮৭/২০২৩',
+      lawyer_id: 'staff-2',
+      lawyer_name: 'নুসরাত জাহান',
       requested_date: '2026-08-18',
       requested_time: null,
       confirmed_date: '2026-08-19',
@@ -74,6 +79,8 @@ function seedAppointments(): AppointmentRecord[] {
       client_mobile: '01711223344',
       case_id: null,
       case_display_number: null,
+      lawyer_id: 'staff-1',
+      lawyer_name: 'মোঃ খোরশেদ আলম',
       requested_date: '2026-08-10',
       requested_time: '10:00',
       confirmed_date: '2026-08-10',
@@ -181,6 +188,7 @@ export function requestAppointment(
   body: AppointmentRequestRequest,
 ): AppointmentItem {
   const linkedCase = body.case_id ? getCase(body.case_id) : undefined;
+  const lawyer = listStaff().find((member) => member.id === body.lawyer_id);
 
   const record: AppointmentRecord = {
     id: nextId(),
@@ -189,6 +197,8 @@ export function requestAppointment(
     client_mobile: clientMobile,
     case_id: linkedCase?.id ?? null,
     case_display_number: linkedCase?.display_number ?? null,
+    lawyer_id: lawyer?.id ?? null,
+    lawyer_name: lawyer ? (lawyer.full_name_bn ?? lawyer.full_name) : null,
     requested_date: body.requested_date,
     requested_time: body.requested_time ?? null,
     confirmed_date: null,
