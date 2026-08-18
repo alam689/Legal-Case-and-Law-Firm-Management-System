@@ -25,6 +25,7 @@ import { bnStaff } from './bn/staff.js';
 import { bnPortal } from './bn/portal.js';
 import { bnAdmin } from './bn/admin.js';
 import { bnAppointments } from './bn/appointments.js';
+import { bnMobile } from './bn/mobile.js';
 
 import { enBilling } from './en/billing.js';
 import { enCases } from './en/cases.js';
@@ -42,6 +43,7 @@ import { enStaff } from './en/staff.js';
 import { enPortal } from './en/portal.js';
 import { enAdmin } from './en/admin.js';
 import { enAppointments } from './en/appointments.js';
+import { enMobile } from './en/mobile.js';
 
 export const bn = {
   ...bnCore,
@@ -60,6 +62,7 @@ export const bn = {
   ...bnPortal,
   ...bnAdmin,
   ...bnAppointments,
+  ...bnMobile,
 } as const;
 
 export const en = {
@@ -79,6 +82,7 @@ export const en = {
   ...enPortal,
   ...enAdmin,
   ...enAppointments,
+  ...enMobile,
 };
 
 export type Resources = typeof bn;

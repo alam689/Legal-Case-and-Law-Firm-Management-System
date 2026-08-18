@@ -4,7 +4,7 @@
 
 > আইনজীবী hearing শেষে একবার next date entry করবেন → system নিজেই calendar, timeline, client notification, reminder, task ও diary update করবে। Client-কে আর ফোন করে জিজ্ঞাসা করতে হবে না — "আগের তারিখটা কত ছিল?"
 
-**Status:** Frontend Sprint ১–৫ সম্পন্ন (mock API-র উপর) · Backend শুরু হয়নি
+**Status:** Lawyer Web + Client Mobile app সম্পন্ন (mock API-র উপর) · Backend শুরু হয়নি
 **Kickoff target:** 1 September 2026
 **বিস্তারিত অবস্থা:** [STATUS.md](STATUS.md)
 
@@ -21,6 +21,28 @@
 | [docs/03-data-model.md](docs/03-data-model.md) | সব entity, field, enum, index, seed data requirement |
 | [docs/04-delivery-roadmap.md](docs/04-delivery-roadmap.md) | Sprint-by-sprint MVP backlog, pilot exit criteria, test strategy, critical path |
 | [docs/05-frontend-plan.md](docs/05-frontend-plan.md) | Lawyer Web (React) — stack decision, folder structure, route map, core loop UI spec, sprint plan, FE test/perf/a11y strategy |
+| [mobile/README.md](mobile/README.md) | Client Mobile App (Expo RN) — পর্দা, ওয়েবের সাথে shared layer, monorepo-র ফাঁদ |
+
+---
+
+## Live demo (GitHub Pages)
+
+`main`-এ push হলে [`.github/workflows/pages.yml`](.github/workflows/pages.yml) দুটি অ্যাপই
+প্রকাশ করে:
+
+| পথ | অ্যাপ |
+|---|---|
+| `/` | আইনজীবীর web (React + Vite) |
+| `/app/` | মক্কেলের অ্যাপ (Expo web export) |
+
+⚠ এটি **demo**, pilot deployment নয় — backend নেই, সব তথ্য বানানো, আর
+ডেমো credential পর্দাতেই লেখা থাকে।
+
+Web-এর mock সাধারণ production build থেকে বাদ পড়ে (`web/src/main.tsx`);
+demo-তে সেটি চলে কেবল `VITE_DEMO_MODE=true` দিলে, আর সেটি ওই একটি
+workflow ছাড়া কোথাও সেট করা নেই।
+
+প্রথমবার: repo Settings → Pages → Source = **GitHub Actions**।
 
 ---
 

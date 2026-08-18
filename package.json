@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "CaseFlow BD — AI-powered legal case & law firm management platform for Bangladesh",
+  "description": "CaseFlow BD \u2014 AI-powered legal case & law firm management platform for Bangladesh",
   "engines": {
     "node": ">=20.11.0",
     "pnpm": ">=9"
@@ -32,5 +32,24 @@
     "prettier": "^3.3.3",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.13.0"
+  },
+  "pnpm": {
+    "packageExtensions": {
+      "react-router-dom": {
+        "peerDependencies": {
+          "@types/react": "*"
+        }
+      },
+      "react-router": {
+        "peerDependencies": {
+          "@types/react": "*"
+        }
+      },
+      "lucide-react": {
+        "peerDependencies": {
+          "@types/react": "*"
+        }
+      }
+    }
   }
 }

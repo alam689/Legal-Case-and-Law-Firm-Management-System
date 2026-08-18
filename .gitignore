@@ -23,3 +23,6 @@ stats.html
 .idea/
 .DS_Store
 Thumbs.db
+
+# GitHub Pages assembly (local check)
+_site/

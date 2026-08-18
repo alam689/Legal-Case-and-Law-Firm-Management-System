@@ -13,5 +13,11 @@ export async function startMockWorker(): Promise<void> {
   await worker.start({
     onUnhandledRequest: 'bypass',
     quiet: true,
+    /**
+     * Service worker ফাইলটিও `base`-এর নিচে বসে (GitHub Pages sub-path),
+     * নাহলে ব্রাউজার `/mockServiceWorker.js` খুঁজে 404 পেত আর demo-তে
+     * কোনো API-ই কাজ করত না।
+     */
+    serviceWorker: { url: `${import.meta.env.BASE_URL}mockServiceWorker.js` },
   });
 }

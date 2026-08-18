@@ -49,6 +49,7 @@ export const LOCALE_CHUNKS = [
   'portal',
   'admin',
   'appointments',
+  'mobile',
 ] as const;
 export type LocaleChunk = (typeof LOCALE_CHUNKS)[number];
 
@@ -75,6 +76,7 @@ const LOADERS: Record<Locale, Record<LocaleChunk, () => Promise<Record<string, u
     portal: () => import('./bn/portal.js').then((m) => m.bnPortal),
     admin: () => import('./bn/admin.js').then((m) => m.bnAdmin),
     appointments: () => import('./bn/appointments.js').then((m) => m.bnAppointments),
+    mobile: () => import('./bn/mobile.js').then((m) => m.bnMobile),
   },
   en: {
     landing: () => import('./en/landing.js').then((m) => m.enLanding),
@@ -92,6 +94,7 @@ const LOADERS: Record<Locale, Record<LocaleChunk, () => Promise<Record<string, u
     portal: () => import('./en/portal.js').then((m) => m.enPortal),
     admin: () => import('./en/admin.js').then((m) => m.enAdmin),
     appointments: () => import('./en/appointments.js').then((m) => m.enAppointments),
+    mobile: () => import('./en/mobile.js').then((m) => m.enMobile),
   },
 };
 
@@ -127,6 +130,7 @@ export const NAMESPACES = [
   'portal',
   'admin',
   'appointments',
+  'mobile',
   'state',
   'errors',
   'validation',

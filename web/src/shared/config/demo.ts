@@ -36,4 +36,5 @@ export function demoPersonaFor(mobile: string): DemoPersonaKey {
 }
 
 /** Backend যুক্ত হলে (`VITE_API_MOCKING=disabled`) panel নিজে থেকেই হারিয়ে যাবে। */
-export const showDemoCredentials = import.meta.env.DEV && env.apiMocking;
+export const showDemoCredentials =
+  (import.meta.env.DEV || import.meta.env.VITE_DEMO_MODE === 'true') && env.apiMocking;

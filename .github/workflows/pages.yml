@@ -1,0 +1,90 @@
+name: GitHub Pages (demo)
+
+# দুটি অ্যাপ, একটি সাইট:
+#   /       → আইনজীবীর web (Vite)
+#   /app/   → মক্কেলের অ্যাপ (Expo web export)
+#
+# ⚠ এটি **প্রকাশ্য demo**, pilot deployment নয়। Backend নেই, তাই দুটোই
+# নিজেদের mock-এর উপরে চলে এবং সব তথ্য বানানো। `VITE_DEMO_MODE=true`
+# কেবল এখানেই সেট করা হয় — এই একটিমাত্র জায়গা যেখানে web-এর mock
+# production bundle-এ ঢোকে (কারণ web/src/main.tsx-এ লেখা আছে)।
+
+on:
+  push:
+    branches: [main]
+  # হাতে চালানোর সুযোগ — প্রতিটি push-এ demo হালনাগাদ করতে না চাইলে
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+env:
+  # `https://<user>.github.io/<repo>/` — repo-র নাম থেকেই নেওয়া হয়,
+  # যাতে fork বা rename-এ path হাতে বদলাতে না হয়
+  BASE_PATH: /${{ github.event.repository.name }}/
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # আইনজীবীর web → সাইটের গোড়ায়
+      - name: Build web (demo mode)
+        env:
+          VITE_BASE_PATH: ${{ env.BASE_PATH }}
+          VITE_DEMO_MODE: 'true'
+          VITE_API_MOCKING: 'enabled'
+        run: pnpm --filter @caseflow/web build
+
+      # মক্কেলের অ্যাপ → /app/
+      - name: Build mobile web
+        env:
+          EXPO_BASE_URL: ${{ env.BASE_PATH }}app
+        run: pnpm --filter @caseflow/mobile exec expo export --platform web --output-dir .expo-web
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          cp -r web/dist/. _site/
+          mkdir -p _site/app
+          cp -r mobile/.expo-web/. _site/app/
+          # GitHub Pages কোনো SPA fallback দেয় না; web-এর deep link
+          # (/cases/123) 404.html-এ পড়ে, আর সেটি index.html হলে router
+          # নিজেই path-টি সামলে নেয়। মোবাইলের export ইতিমধ্যেই প্রতিটি
+          # route-এর HTML আগে থেকে তৈরি করে রাখে (output: 'static')।
+          cp _site/index.html _site/404.html
+          # Jekyll `_expo/` মতো underscore-শুরু folder বাদ দিয়ে দেয়
+          touch _site/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

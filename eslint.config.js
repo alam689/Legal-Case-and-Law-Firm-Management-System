@@ -11,7 +11,17 @@ import tseslint from 'typescript-eslint';
  */
 export default tseslint.config(
   {
-    ignores: ['**/dist/**', '**/node_modules/**', '**/coverage/**', '**/*.d.ts', 'web/public/**'],
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      '**/coverage/**',
+      '**/*.d.ts',
+      'web/public/**',
+      'mobile/.expo/**',
+      // `expo export`-এর ফল — verification artefact, কোড নয়
+      'mobile/.expo-export/**',
+      'mobile/.expo-web/**',
+    ],
   },
 
   js.configs.recommended,
@@ -43,9 +53,9 @@ export default tseslint.config(
     },
   },
 
-  /* ── React (web only) ────────────────────────────────────────────── */
+  /* ── React (web ও mobile) ────────────────────────────────────────── */
   {
-    files: ['web/**/*.{ts,tsx}'],
+    files: ['web/**/*.{ts,tsx}', 'mobile/**/*.{ts,tsx}'],
     plugins: {
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
@@ -53,7 +63,6 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      ...a11y.flatConfigs.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
 
       /* FE-security — docs/05 §15 */
@@ -78,9 +87,20 @@ export default tseslint.config(
     },
   },
 
+  /**
+   * jsx-a11y DOM-এর নিয়ম (`alt`, `aria-*`, `<label htmlFor>`) — RN-এ সেসব
+   * element-ই নেই। মোবাইলে সমতুল্য দায়িত্ব `accessibilityLabel` ও
+   * `accessibilityRole`, যা এই plugin দেখে না। তাই web-এই সীমাবদ্ধ।
+   */
+  {
+    files: ['web/**/*.{ts,tsx}'],
+    plugins: { 'jsx-a11y': a11y },
+    rules: { ...a11y.flatConfigs.recommended.rules },
+  },
+
   /* ── Dependency boundary (docs/05 §4) ────────────────────────────── */
   {
-    files: ['web/src/features/**/*.{ts,tsx}'],
+    files: ['web/src/features/**/*.{ts,tsx}', 'mobile/src/features/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -101,7 +121,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['web/src/shared/**/*.{ts,tsx}'],
+    files: ['web/src/shared/**/*.{ts,tsx}', 'mobile/src/shared/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -132,6 +152,24 @@ export default tseslint.config(
           ],
         },
       ],
+    },
+  },
+
+  /**
+   * Mobile-এর tooling config — CommonJS Node script।
+   *
+   * Metro, Jest ও Babel তিনটিই config-টি `require()` করে, তাই এগুলো ESM
+   * হতে পারে না। App-এর কোডে `require` এখনো নিষিদ্ধ; ছাড়টি শুধু repo-র
+   * গোড়ায় থাকা এই কটি ফাইলের।
+   */
+  {
+    files: ['mobile/*.js'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: { ...globals.node, jest: 'readonly' },
+    },
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
     },
   },
 

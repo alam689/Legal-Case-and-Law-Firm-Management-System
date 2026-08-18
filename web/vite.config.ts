@@ -5,7 +5,17 @@ import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig } from 'vite';
 
+/**
+ * GitHub Pages-এ সাইটটি `/<repo>/`-এর নিচে বসে, root-এ নয়।
+ *
+ * তাই `base` env থেকে নেওয়া হয়: local dev ও আসল deploy-এ `/`, আর Pages
+ * build-এ workflow সেটি বসিয়ে দেয়। হাতে `/<repo>/` লিখে রাখলে dev
+ * server-ও ওই path-এ চলে যেত, যা প্রতিদিনের কাজে বিরক্তিকর।
+ */
+const basePath = process.env.VITE_BASE_PATH ?? '/';
+
 export default defineConfig(({ mode }) => ({
+  base: basePath,
   plugins: [
     react(),
     // `pnpm build && open stats.html` — bundle budget তদন্তের জন্য (docs/05 §12)

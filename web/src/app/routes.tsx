@@ -376,7 +376,14 @@ const appRoutes: RouteObject[] = [
 const routes: RouteObject[] = [{ element: <ScrollToTopLayout />, children: appRoutes }];
 
 export function createAppRouter() {
-  return createBrowserRouter(routes);
+  /**
+   * `BASE_URL` — Vite-এর `base`।
+   *
+   * Sub-path-এ (GitHub Pages) basename না দিলে asset ঠিকই লোড হত, কিন্তু
+   * router `/Legal-Case…/dashboard`-কে অচেনা path ভেবে 404 দেখাত। দুটি
+   * আলাদা ব্যবস্থা, দুটোকেই বলতে হয়।
+   */
+  return createBrowserRouter(routes, { basename: import.meta.env.BASE_URL });
 }
 
 export { routes, appRoutes };

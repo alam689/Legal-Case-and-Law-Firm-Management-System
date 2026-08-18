@@ -277,14 +277,39 @@ ToS/Privacy placement · Sentry release + source map · UAT fix
 
 ---
 
+## 5.৯ মক্কেলের অ্যাপ (Expo React Native)
+
+`mobile/` — persona P1-এর জন্য আলাদা অ্যাপ, docs/01-scope §4-এর নয়টি
+পর্দাই আছে (হোম, মামলা ও বিবরণ, সাক্ষাৎ, বিল, কাগজপত্র, বার্তা, সম্পত্তি,
+আইনজীবী, সেটিংস), লগইন → OTP সহ। বিস্তারিত: [mobile/README.md](mobile/README.md)।
+
+তিনটি সিদ্ধান্ত লিখে রাখা দরকার:
+
+1. **নিচে পাঁচটি ট্যাব, নয়টি নয়** — বাকিগুলো "আরও"-তে। mid-range Android-এ
+   নয়টি ট্যাব মানে প্রতিটি ~২৪px, অর্থাৎ লক্ষ্যভেদ লটারি।
+2. **`packages/*`-ই একমাত্র ভাগ** (§16-এর নিয়ম)। Component, navigation ও
+   token storage আলাদা; refresh token SecureStore-এ, কারণ মোবাইলে
+   httpOnly cookie নেই আর প্রতিবার OTP চাওয়া মক্কেলের কাছে অসহনীয়।
+3. **MSW নয়, নিজস্ব mock adapter** — `HttpClient`-এর হুবহু একই interface,
+   তাই `EXPO_PUBLIC_API_MOCKING=false` দিলেই আসল client বসে যায়, কোনো
+   screen বদলাতে হয় না।
+
+দুটি ফাইল ইচ্ছাকৃতভাবে **নকল** (ভাগ নয়): `formatters.ts` ও theme token।
+কারণ ও ঝুঁকি mobile/README-তে লেখা — দুটোকে হাতে মিলিয়ে রাখতে হবে।
+
+⚠ React 18 (web) ও React 19 (mobile, Expo 57-এর দাবি) একই workspace-এ।
+root `package.json`-এর `pnpm.packageExtensions` ছাড়া pnpm-এর hoisted
+`@types/react@19` ওয়েবের typecheck ভেঙে দেয়।
+
+---
+
 ## 6. Not started
 
 - **Backend** — সম্পূর্ণ। **এটিই এখন একমাত্র critical path** — frontend-এর
   আর কোনো feature বাকি নেই, তাই পরবর্তী প্রকৃত অগ্রগতি backend থেকেই আসবে।
-- **Client mobile app (RN)** — roadmap অনুযায়ী আলাদা track। মক্কেল আপাতত
-  web portal (`/portal`) ব্যবহার করেন; `packages/domain` ও `packages/i18n`
-  portable রাখা আছে বলে RN-এ একই যুক্তি ও লেখা পুনরায় ব্যবহার করা যাবে।
-  Push notification RN ছাড়া সম্ভব নয় — portal-এ শুধু পাঠানো বার্তার তালিকা
+- **Push notification** — `expo-notifications` + FCM registration। মক্কেলের
+  অ্যাপ (`mobile/`) দাঁড়িয়ে গেছে, কিন্তু push এখনো নেই; আপাতত অ্যাপে শুধু
+  পাঠানো বার্তার তালিকা দেখা যায়, বার্তা এসে পৌঁছায় না
 - **AI feature** — [`PROJECT_PLAN`](PROJECT_PLAN.md)-এ আছে, frontend-এ কোনো কাজ হয়নি
 - **Deployment / infra** — CI আছে, CD নেই
 

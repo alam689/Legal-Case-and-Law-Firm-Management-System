@@ -4,8 +4,27 @@
     {
       "name": "web",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@caseflow/web", "dev"],
+      "runtimeArgs": [
+        "--filter",
+        "@caseflow/web",
+        "dev"
+      ],
       "port": 5173
+    },
+    {
+      "name": "mobile-web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "@caseflow/mobile",
+        "exec",
+        "expo",
+        "start",
+        "--web",
+        "--port",
+        "8082"
+      ],
+      "port": 8082
     }
   ]
 }
